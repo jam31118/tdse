@@ -1,4 +1,10 @@
 # TDSE: Time-Dependent Schrödinger Equation
+Time-Dependent Schrödinger Equation solver for simple quantum system.
 
-Simple TDSE simulator.
+# Example
+![example-1]()
 
+# INSTALL
+```
+pip install tdse
+```

@@ -42,7 +42,7 @@ setup(
     ],
     keywords='physics, quantum mechanics, simulation',
     packages=find_packages(),
-    install_requires=['numpy','matplotlib','vis','nunit'],
+    install_requires=['numpy','matplotlib','vis','nunit','ntype'],
     long_description=long_description,
     license = 'GPLv3'
 )
