@@ -4,6 +4,22 @@ import numpy as np
 
 from .grid import Grid_Cartesian_1D
 
+
+def construct_static_kinetic_energy_matrix_1d(delta_x, N_x, dtype=complex):
+    """Construct a matrix corresponding to static part of kinetic energy operator.
+    
+    Returned kinetic energy matrix is for an electron and in atomic unit,
+    thus Planck constant and electron mass are set to 1.
+    """
+    matrix_shape = (N_x, N_x)
+    coef = - 0.5 / (delta_x)
+    KE_static = np.zeros(matrix_shape, dtype=dtype)
+    np.fill_diagonal(KE_static, - 2.0 * coef)
+    np.fill_diagonal(KE_static[:-1,1:], 1.0 * coef)
+    np.fill_diagonal(KE_static[1:,:-1], 1.0 * coef)
+    return KE_static
+
+
 class Hamiltonian_1D(object):
     """Manage Hamiltonian matrix"""
     def __init__(self, grid, static_potential=None, dynamic_potential=None):
@@ -68,13 +84,15 @@ class Hamiltonian_1D(object):
         ## Construct a matrix corresponding to static part of potential energy operator
         self.PE_static = np.zeros(self.matrix_shape, dtype=np.complex)
         self.PE_static[np.diag_indices_from(self.PE_static)] = self.static_potential
+        
 
         ## Construct a matrix corresponding to static part of kinetic energy operator
-        coef = - 0.5 / (self.grid.x.delta * self.grid.x.delta)
-        self.KE_static = np.zeros(self.matrix_shape, dtype=np.complex)
-        np.fill_diagonal(self.KE_static, - 2.0 * coef)
-        np.fill_diagonal(self.KE_static[:-1,1:], 1.0 * coef)
-        np.fill_diagonal(self.KE_static[1:,:-1], 1.0 * coef)
+        self.KE_static = construct_static_kinetic_energy_matrix_1d(self.grid.x.delta_x, self.grid.x.N)
+#        coef = - 0.5 / (self.grid.x.delta * self.grid.x.delta)
+#        self.KE_static = np.zeros(self.matrix_shape, dtype=np.complex)
+#        np.fill_diagonal(self.KE_static, - 2.0 * coef)
+#        np.fill_diagonal(self.KE_static[:-1,1:], 1.0 * coef)
+#        np.fill_diagonal(self.KE_static[1:,:-1], 1.0 * coef)
         
         ## Add static parts of matrix for kinetic energy and for potential energy
         self.static_part = self.KE_static + self.PE_static

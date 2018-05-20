@@ -8,7 +8,7 @@ from vis.indicator import Progress_Bar
 #from unit import au2si
 from nunit.au import au2si
 
-import matrix
+from . import matrix
 from .state import State_function_in_Box_1D
 from .grid import Grid_Cartesian_1D
 from .hamiltonian import Hamiltonian_1D

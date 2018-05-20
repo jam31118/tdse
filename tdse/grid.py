@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import pi
 
-from .ntype import is_integer_valued_real, is_real_number
+from ntype import is_integer_valued_real, is_real_number
 from .coordinate import transform_to_canonical_range_of_spherical_coordinate
 
 
