@@ -12,7 +12,7 @@ def construct_static_kinetic_energy_matrix_1d(delta_x, N_x, dtype=complex):
     thus Planck constant and electron mass are set to 1.
     """
     matrix_shape = (N_x, N_x)
-    coef = - 0.5 / (delta_x)
+    coef = - 0.5 / (delta_x * delta_x)
     KE_static = np.zeros(matrix_shape, dtype=dtype)
     np.fill_diagonal(KE_static, - 2.0 * coef)
     np.fill_diagonal(KE_static[:-1,1:], 1.0 * coef)
