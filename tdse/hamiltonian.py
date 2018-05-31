@@ -5,14 +5,7 @@ from numbers import Real
 import numpy as np
 
 from .grid import Grid_Cartesian_1D
-
-
-def get_second_deriv_tri_diagonals(N_x0, delta_x0, dtype=complex):
-    for arg in [N_x0, delta_x0]: assert isinstance(arg, Real)
-    coef = 1.0 / (delta_x0 * delta_x0)
-    diag = np.full(N_x0, fill_value=-2.0 * coef, dtype=dtype)
-    off_diag = np.full(N_x0-1, fill_value=1.0 * coef, dtype=dtype)
-    return diag, off_diag
+from .finite_difference import get_second_deriv_tri_diagonals
 
 def get_kinetic_energy_tri_diagonals(N_x0, delta_x0, dtype=complex):
     diag, off_diag = get_second_deriv_tri_diagonals(N_x0, delta_x0, dtype=dtype)
