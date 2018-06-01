@@ -49,7 +49,7 @@ def mat_vec_mul_tridiag(alpha, beta, gamma, v, N=None):
     if N is None: N = len(v)
     else: assert N == len(v)
     
-    b = np.empty_like(v, dtype=complex)
+    b = np.empty_like(v)
     b[0] = alpha[0] * v[0] + gamma[0] * v[1]
     b[N-1] = beta[N-2] * v[N-2] + alpha[N-1] * v[N-1]
     for idx in range(1,N-1):
