@@ -114,3 +114,32 @@ def fd_diff_1d(f0_ana, kernel_center_unflipped, kernel_left_unflipped, kernel_ri
     
     return f1_num
 
+
+
+def get_error_over_delta_x_power_for_1st_deriv_and_2nd_order_accuracy(fx, delta_x):
+    
+    ## Evaluate 3rd derivative with 4th order accuracy
+    deriv_order = 3
+    fd_order = 4
+    kernel_unflipped = np.array([1/8, -1, 13/8, 0, -13/8, 1, -1/8]) / delta_x ** deriv_order
+    kernel_left_unflipped = np.array([-49/8, 29, -461/8, 62, -307/8, 13, -15/8]) / delta_x ** deriv_order
+    kernel_right_unflipped = (-1)**deriv_order * np.flip(kernel_left_unflipped, axis=0)
+
+    f3_num = fd_diff_1d(fx, kernel_unflipped, kernel_left_unflipped, kernel_right_unflipped)
+
+    
+    ## Evaluate 5th derivative with 2nd order accuracy
+    deriv_order = 5
+    kernel_unflipped = np.array([-1/2,2,-5/2,0,5/2,-2,1/2]) / delta_x ** deriv_order
+    kernel_left_unflipped = np.array([-7/2,20,-95/2,60,-85/2,16,-5/2]) / delta_x ** deriv_order # 2nd order accuracy
+    # kernel_left_unflipped = np.array([-46,295,-810,1235,-1130,621,-190,25]) / 6 / delta_x ** deriv_order  # 3rd order accuracy
+    kernel_right_unflipped = (-1)**deriv_order * np.flip(kernel_left_unflipped, axis=0)
+
+    f5_num = fd_diff_1d(fx, kernel_unflipped, kernel_left_unflipped, kernel_right_unflipped)
+
+    
+    ## Build approximated expression
+    m_arr_ana_estimated = np.abs(f3_num / (1*2*3) + f5_num / (1*2*3*4*5) * delta_x**2)
+    
+    return m_arr_ana_estimated
+
