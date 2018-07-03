@@ -8,10 +8,10 @@ from .grid import Grid_Cartesian_1D
 from .finite_difference import get_second_deriv_tri_diagonals
 
 def get_kinetic_energy_tri_diagonals(N_x0, delta_x0, dtype=complex):
-    diag, off_diag = get_second_deriv_tri_diagonals(N_x0, delta_x0, dtype=dtype)
+    diag, off_diag, _ = get_second_deriv_tri_diagonals(N_x0, delta_x0, dtype=dtype)
     coef = -0.5  # in atomic unit
     for arr in [diag, off_diag]: arr *= coef
-    return diag, off_diag
+    return diag, off_diag, off_diag
 
 
 def construct_static_kinetic_energy_matrix_1d(delta_x, N_x, dtype=complex):
