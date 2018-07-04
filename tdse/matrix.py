@@ -44,6 +44,11 @@ def gaussian_elimination_tridiagonal(alpha, beta, gamma, b):
 def mat_vec_mul_tridiag(alpha, beta, gamma, v, N=None):
     """
     Calculate b = A * v, where A is tridiagonal matrix
+
+    # NOTE
+    `alpha`: diagonal of the matrix
+    `beta`: off-diagonal by 1 in lower direction from the diagonal
+    `gamma`: off-diagonal by 1 in upper direction from the diagonal
     """
     ## Process input arguments
     if N is None: N = len(v)
