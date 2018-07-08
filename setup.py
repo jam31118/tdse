@@ -1,5 +1,5 @@
-
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
+from numpy.distutils.misc_util import get_numpy_include_dirs
 
 from codecs import open
 from os import path
@@ -27,11 +27,18 @@ def find_version(*file_paths):
 
 
 
+ext_modules = [
+    Extension("tdse.matrix_c", 
+        sources=["./c/matrix/py_matrix.c","./c/matrix/matrix.c"],
+        include_dirs=["./c/matrix"] + get_numpy_include_dirs() )
+]
+
+
 setup(
     name='tdse',
     version=find_version("tdse", "version.py"),
     description='Simple TDSE simulator',
-    url='',
+    url='https://github.com/jam31118/tdse',
     author='sahn',
     author_email='jam31118@gmail.com',
     classifiers=[
@@ -42,6 +49,7 @@ setup(
     ],
     keywords='physics, quantum mechanics, simulation',
     packages=find_packages(),
+    ext_modules=ext_modules,
     install_requires=['numpy','matplotlib','vis','nunit','ntype'],
     long_description=long_description,
     license = 'GPLv3'
