@@ -2,6 +2,8 @@
 Collection of analytical expressions for TDSE (Time Dependent Schr\"{o}dinger Equation)
 """
 
+from numbers import Real
+
 import numpy as np
 from scipy import special
 from scipy.optimize import brentq
@@ -75,3 +77,27 @@ def eigenfunction_polar_box(rho, phi, t, m, n, R0):
     time_depend = np.exp( - 0.5j * t * (zero_point / R0)**2)
 
     return time_independ * time_depend
+
+
+def energy_eigenfuncion_for_1d_box(x, n, a, b, with_energy=False):
+    """
+    Returns an `n`-th energy eigenfunction array for particle in an one-dimensional box.
+
+    If `with_energy` is True, returns a corresponding energy eigenvalue in Hartree unit.
+    """
+
+    for scalar_arg in [a, b]: assert isinstance(scalar_arg, Real)
+    assert a < b
+    L = b - a
+
+    assert (n == int(n)) and (n > 0)
+
+    result = np.sqrt(2.0 / L) * np.sin(n*np.pi/L * (x-a))
+    
+    if not with_energy:
+        return result
+    else:
+        energy = 0.5 * (n*np.pi/L)**2
+        return (result, energy)
+
+
