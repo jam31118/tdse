@@ -27,4 +27,40 @@ int mat_vec_mul_tridiag(double *alpha, double *beta, double *gamma, double *v, d
 
 }
 
+int gaussian_elimination_tridiagonal(double *alpha, double *beta, double *gamma, double *b, double *v, long N) {
+
+  // Allocate arrays for intermediate results
+  double *delta = (double *) malloc(sizeof(double) * N);
+//  double *v = (double *) malloc(sizeof(double) * N);
+  
+  long i;
+  double *p_alpha, *p_beta, *p_gamma, *p_b, *p_delta, *p_v;
+//  double alpha_temp;
+  double beta_temp;
+
+  // copy the first element as a start
+  *delta = *alpha;  
+  *v = *b / (*delta);
+
+  // iteration to bigger index
+  for ( p_alpha=alpha+1, p_beta=beta, p_gamma=gamma, p_delta=delta, p_b=b+1, p_v=v, i=0; i < N-1;
+      ++p_alpha, ++p_beta, ++p_gamma, ++p_delta, ++p_v, ++i, ++p_b ) {
+    
+    beta_temp = *p_beta;
+    *(p_delta+1) = *(p_alpha) - (*p_gamma) * beta_temp / (*p_delta);
+    *(p_v+1) = (*p_b - *p_v * beta_temp) / (*(p_delta+1)); 
+    // [NOTE] Using `p_v+1` in place of `p_b` is not valid since `p_v+1` hasn't been set yet.
+
+  }
+
+  // iteration to smaller index
+  // [NOTE] Check that the address pointed by `p_v`, `p_gamma`, `p_delta` at previous loop can be used.
+  for (--p_gamma, --p_delta; i > 0; --p_gamma, --p_delta, --p_v, --i) {
+    *(p_v-1) = *(p_v-1) - *p_v * (*p_gamma) / (*p_delta);
+    // [NOTE] Using `p_v-1` is valid since it has already been set.
+  }
+
+  return 0;
+}
+
 

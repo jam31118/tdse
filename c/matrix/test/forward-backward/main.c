@@ -33,6 +33,14 @@ int main() {
 
   for (i=0; i<N; i++) { fprintf(stdout, "[ LOG ] out[%ld] = %f\n", i, out[i]); }
 
+  // Gaussian Elimination
+  if ( gaussian_elimination_tridiagonal(alpha, beta, gamma, out, v, N) != 0 ) {
+    fprintf(stderr, "[ERROR] Failed to run gaussian_elimination_tridiagonal()\n");
+    return 1;
+  }
+
+  for (i=0; i<N; i++) { fprintf(stdout, "[ LOG ] v[%ld] = %f\n", i, v[i]); }
+
   return 0;
 
 }
