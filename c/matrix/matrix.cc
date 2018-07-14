@@ -1,4 +1,4 @@
-#include "matrix.h"
+#include "matrix.hh"
 
 int mat_vec_mul_tridiag(double *alpha, double *beta, double *gamma, double *v, double *out, long N) {
   

@@ -29,8 +29,8 @@ def find_version(*file_paths):
 
 ext_modules = [
     Extension("tdse.matrix_c", 
-        sources=["./c/matrix/py_matrix.c","./c/matrix/matrix.c"],
-        include_dirs=["./c/matrix"] + get_numpy_include_dirs() )
+        sources=["./c/matrix/py_matrix.cc","./c/matrix/matrix.cc"],
+        include_dirs=["./c/matrix"] + get_numpy_include_dirs() ),
 ]
 
 
