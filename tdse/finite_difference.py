@@ -115,6 +115,27 @@ def fd_diff_1d(f0_ana, kernel_center_unflipped, kernel_left_unflipped, kernel_ri
     return f1_num
 
 
+def deriv_1st_fd_2nd_1d(f_x, delta_x):
+    """"""
+    deriv_order = 1
+    fd_order = 2
+    kernel_center_unflipped_1_2 = np.array([-1/2, 0, 1/2]) / delta_x ** deriv_order
+    kernel_left_unflipped_1_2 = np.array([-3/2, 2, -1/2]) / delta_x ** deriv_order
+    kernel_right_unflipped_1_2 = (-1)**deriv_order * np.flip(kernel_left_unflipped_1_2, axis=0)
+    deriv = fd_diff_1d(f_x, kernel_center_unflipped_1_2, kernel_left_unflipped_1_2, kernel_right_unflipped_1_2)
+    return deriv
+
+
+def deriv_2nd_fd_2nd_1d(f_x, delta_x):
+    """"""
+    deriv_order = 2
+    fd_order = 2
+    kernel_center_unflipped_2_2 = np.array([1, -2, 1]) / delta_x ** deriv_order
+    kernel_left_unflipped_2_2 = np.array([2, -5, 4, -1]) / delta_x ** deriv_order
+    kernel_right_unflipped_2_2 = (-1)**deriv_order * np.flip(kernel_left_unflipped_2_2, axis=0)
+    deriv = fd_diff_1d(f_x, kernel_center_unflipped_2_2, kernel_left_unflipped_2_2, kernel_right_unflipped_2_2)
+    return deriv
+
 
 def get_error_over_delta_x_power_for_1st_deriv_and_2nd_order_accuracy(fx, delta_x):
     
