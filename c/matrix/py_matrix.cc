@@ -128,7 +128,7 @@ static PyObject *matrix_c_mat_vec_mul_tridiag(PyObject *self, PyObject *args) {
   if (typenum == NPY_DOUBLE) {
     if (mat_vec_mul_tridiag_core_template<double>(alpha_obj, beta_obj, gamma_obj, v_obj, out_obj, N) != 0) { goto fail; }
   } else if (typenum == NPY_COMPLEX128) {
-    if (mat_vec_mul_tridiag_core_template<std::complex<double>>(alpha_obj, beta_obj, gamma_obj, v_obj, out_obj, N) != 0) { goto fail; }
+    if (mat_vec_mul_tridiag_core_template< std::complex<double> >(alpha_obj, beta_obj, gamma_obj, v_obj, out_obj, N) != 0) { goto fail; }
   } else {
     PyErr_SetString(PyExc_Exception, "Unexpected typenum");
     goto fail;
