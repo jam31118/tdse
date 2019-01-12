@@ -101,3 +101,38 @@ def energy_eigenfuncion_for_1d_box(x, n, a, b, with_energy=False):
         return (result, energy)
 
 
+
+
+def Gaussian1D(x,t,k_x):
+    return np.sqrt(1.0/(1+2j*t)) \
+        * np.exp(-1.0/4 * (k_x**2)) \
+        * np.exp(-1.0/(1+2j*t) * (x - 1j*k_x/2)**2)
+
+
+def Gaussian2D(x,y,t,k_x,k_y):
+    return (1.0/(1+2j*t)) \
+        * np.exp(-1.0/4 * (k_x**2 + k_y**2)) \
+        * np.exp(-1.0/(1+2j*t) * ((x - 1j*k_x/2.0)**2 + (y - 1j*k_y/2.0)**2))
+
+def Gaussian3D(x,y,z,t,k_x,k_y,k_z):
+    return (1.0/(1+2j*t))**(1.5) \
+        * np.exp(-1.0/4 * (k_x**2 + k_y**2 + k_z**2)) \
+        * np.exp(-1.0/(1+2j*t) * ( (x - 1j*k_x/2.0)**2 + (y - 1j*k_y/2.0)**2 + (z - 1j*k_z/2.0)**2 ) )
+
+
+def waveInBox(x,t,n,L=1):
+    E = 0.5*(n*np.pi/L)**2
+    return np.sin(n*np.pi/L * x) * np.exp(1j*E*t)
+
+
+def superposedWaveInBox(x,t,L,n_list=[], coef=[]):
+	if len(coef) > 0:
+		assert len(n_list) == len(coef)
+	else:
+		# Equal weight for each mode
+		coef = np.ones_like(n_list)
+	result = 0
+	for index, n in enumerate(n_list):
+		result += coef[index] * waveInBox(x,t,n,L)
+	return result
+
