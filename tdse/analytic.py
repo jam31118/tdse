@@ -104,18 +104,21 @@ def energy_eigenfuncion_for_1d_box(x, n, a, b, with_energy=False):
 
 
 def Gaussian1D(x,t,k_x):
-    return np.sqrt(1.0/(1+2j*t)) \
+    return (2/np.pi)**(0.25) \
+        * np.sqrt(1.0/(1+2j*t)) \
         * np.exp(-1.0/4 * (k_x**2)) \
         * np.exp(-1.0/(1+2j*t) * (x - 1j*k_x/2)**2)
 
 
 def Gaussian2D(x,y,t,k_x,k_y):
-    return (1.0/(1+2j*t)) \
+    return (2/np.pi)**(0.5) \
+        * (1.0/(1+2j*t)) \
         * np.exp(-1.0/4 * (k_x**2 + k_y**2)) \
         * np.exp(-1.0/(1+2j*t) * ((x - 1j*k_x/2.0)**2 + (y - 1j*k_y/2.0)**2))
 
 def Gaussian3D(x,y,z,t,k_x,k_y,k_z):
-    return (1.0/(1+2j*t))**(1.5) \
+    return (2/np.pi)**(0.75) \
+        * (1.0/(1+2j*t))**(1.5) \
         * np.exp(-1.0/4 * (k_x**2 + k_y**2 + k_z**2)) \
         * np.exp(-1.0/(1+2j*t) * ( (x - 1j*k_x/2.0)**2 + (y - 1j*k_y/2.0)**2 + (z - 1j*k_z/2.0)**2 ) )
 
