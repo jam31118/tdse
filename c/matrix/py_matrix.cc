@@ -20,8 +20,9 @@ static PyModuleDef matrix_c = {
 };
 
 PyMODINIT_FUNC PyInit_matrix_c(void) {
-  std::cout << "init!\n";
+  std::cout << "init!!\n";
   import_array();
+  std::cout << "successfully imported array\n";
   return PyModule_Create(&matrix_c);
 }
 
