@@ -7,6 +7,16 @@ import numpy as np
 from .matrix import mat_vec_mul_tridiag
 
 
+
+def it_seems_increasing_equidistanced_arr(x_arr):
+    _x_arr_diff = np.diff(x_arr)
+    _is_increasing = np.all(_x_arr_diff > 0)
+    _seems_equidistanced = _x_arr_diff.std() < 1e-15
+    return _is_increasing and _seems_equidistanced
+
+
+
+
 def get_right_side_first_deriv_2nd_order_weight(delta_x):
     return np.array([-3.0, 4.0, -1.0], dtype=float) / (2.0 * delta_x)
 
