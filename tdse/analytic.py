@@ -2,7 +2,7 @@
 Collection of analytical expressions for TDSE (Time Dependent Schr\"{o}dinger Equation)
 """
 
-from numbers import Real
+from numbers import Real, Integral
 
 import numpy as np
 from scipy import special
