@@ -102,6 +102,43 @@ def energy_eigenfuncion_for_1d_box(x, n, a, b, with_energy=False):
 
 
 
+from scipy.special import genlaguerre, factorial
+
+def hydrogen_phi_nlm(r, n, l, m, exact_factorial=False):
+    '''
+    The radial part of the normalized hydrogen wavefunction,
+    multiplied by the radial coordinate `r`.
+    
+    - Considered only the electron mass, 
+    instead of the reduced mass concept, which includes proton.
+    - The atomic unit is used.
+    '''
+    
+    _a_0_star = 1.0  # the reduced Bohr radius
+    
+    for quantum_number in (n, l, m):
+        assert isinstance(quantum_number, Integral)
+    assert isinstance(exact_factorial, bool)
+    assert (n >= 1) and (l >= 0) and (m <= l) and (m >= -l)
+    
+    _n, _l, _m = n, l, m
+    
+    _r = r
+    _rho = 2.0 * _r / (_n*_a_0_star)
+    _constant = np.sqrt(
+        (2.0/(_n*_a_0_star)) 
+        * factorial(_n-_l-1, exact=exact_factorial)
+        / (2.0 * _n * factorial(_n+_l, exact=exact_factorial))
+    )
+    _result = np.exp(-_rho*0.5)
+    _result *= np.power(_rho, _l+1)  # `_l+1` due to multiplied `r`
+    _result *= genlaguerre(_n-_l-1, 2*_l+1, monic=False)(_rho)
+    _result *= _constant
+    
+    return _result
+
+
+
 
 def Gaussian1D(x,t,k_x):
     return (2/np.pi)**(0.25) \
