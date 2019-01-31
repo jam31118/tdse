@@ -8,10 +8,10 @@ from .matrix import mat_vec_mul_tridiag
 
 
 
-def it_seems_increasing_equidistanced_arr(x_arr):
+def it_seems_increasing_equidistanced_arr(x_arr, thres_order=-14):
     _x_arr_diff = np.diff(x_arr)
     _is_increasing = np.all(_x_arr_diff > 0)
-    _seems_equidistanced = _x_arr_diff.std() < 1e-15
+    _seems_equidistanced = _x_arr_diff.std() < pow(10, thres_order)
     return _is_increasing and _seems_equidistanced
 
 
