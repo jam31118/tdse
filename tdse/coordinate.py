@@ -1,4 +1,6 @@
+import numpy as np
 from numpy import pi, sin, cos
+
 
 def transform_to_canonical_range_of_spherical_coordinate(rho, theta, phi):
     """Transform given spherical coordinates into canonical range
@@ -76,3 +78,44 @@ def spherical_to_cartesian(rho, theta, phi):
     y = rho * sin(theta) * sin(phi)
     z = rho * cos(theta)
     return x, y, z
+
+
+def move_to_canonical_range_spherical_coord_arr(rho_arr, theta_arr, phi_arr):
+    """Transform given spherical coordinates in numpy arrays into canonical range
+
+    # NOTE: Canonical range of spherical coordinate
+    - Definition
+      : The canonical range of spherical coodrinate depends on the definition.
+      : In this funtion, the canoncial range is defined by the following:
+      - 0 <= rho
+      - 0 <= theta <= pi
+      - 0 <= phi < 2.0*pi
+    """
+
+    ## Check argument
+    for arg in (rho_arr, theta_arr, phi_arr): 
+        assert isinstance(arg, np.ndarray)
+        assert (arg.ndim == 1) and (arg.size == rho_arr.size)
+    
+
+    ## Transform radial cooridnate 'rho'
+    _rho_mask = rho_arr < 0
+    rho_arr[_rho_mask] *= -1.0
+    theta_arr[_rho_mask] = pi - theta_arr[_rho_mask]
+    phi_arr[_rho_mask] += pi
+
+    
+    ## Transform polar angle coordinate 'theta'
+    _theta_mask = (theta_arr < -pi) | (theta_arr >= pi)
+    # move theta into the canonical range: -pi <= theta < pi
+    _theta_mask[_theta_mask] = ((_theta_mask[_theta_mask] + pi) % (2.0*pi)) - pi
+    _theta_negative_mask = _theta_mask & (theta_arr < 0)
+    theta_arr[_theta_negative_mask] *= -1.0
+    phi_arr[_theta_negative_mask] += pi
+
+    
+    ## Transform azimuthal angle coordinate 'phi'
+    _phi_mask = (phi_arr < 0) | (phi_arr >= 2.0*pi)
+    phi_arr[_phi_mask] %= (2.0*pi)
+
+
