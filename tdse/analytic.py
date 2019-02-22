@@ -1,5 +1,6 @@
 """
-Collection of analytical expressions for TDSE (Time Dependent Schr\"{o}dinger Equation)
+Collection of analytical expressions for TDSE,
+the Time Dependent Schr\"{o}dinger Equation
 """
 
 from numbers import Real, Integral
@@ -12,7 +13,8 @@ from ntype import is_real_number, is_integer, is_integer_valued_real
 
 
 def spherical_jn_zeros(n, nt):
-    """Get nt-th zero point of n-th order spherical Bessel function of a first kind.
+    """Get n-th zero point of n-th order spherical Bessel function 
+    of a first kind.
 
     ## Paramters ##
     # n, integer, spherical Bessel function's index (staring from 0)
@@ -58,7 +60,9 @@ def eigenfunction_spherical_box(rho, theta, phi, t, n, l, m, R0):
 
     zero_point = spherical_jn_zeros(l, n)
     energy = 0.5 * (zero_point / R0) ** 2
-    time_independent_part = special.spherical_jn(l, zero_point / R0 * rho) * special.sph_harm(m, l, phi, theta)
+    time_independent_part = \
+        special.spherical_jn(l, zero_point / R0 * rho) \
+        * special.sph_harm(m, l, phi, theta)
     time_dependent_part = np.exp( -1.0j * energy * t)
     return time_independent_part * time_dependent_part
 
@@ -73,7 +77,7 @@ def eigenfunction_polar_box(rho, phi, t, m, n, R0):
     for arg in [n, R0]: assert arg > 0
 
     zero_point = special.jn_zeros(m, n)[-1]
-    time_independ = special.jn(m, rho * zero_point / R0) * np.exp(1.0j * m * phi)
+    time_independ = special.jn(m, rho * zero_point / R0) * np.exp(1.0j*m*phi)
     time_depend = np.exp( - 0.5j * t * (zero_point / R0)**2)
 
     return time_independ * time_depend
@@ -81,9 +85,11 @@ def eigenfunction_polar_box(rho, phi, t, m, n, R0):
 
 def energy_eigenfuncion_for_1d_box(x, n, a, b, with_energy=False):
     """
-    Returns an `n`-th energy eigenfunction array for particle in an one-dimensional box.
+    Returns an `n`-th energy eigenfunction array for particle 
+    in an one-dimensional box.
 
-    If `with_energy` is True, returns a corresponding energy eigenvalue in Hartree unit.
+    If `with_energy` is True, returns a corresponding energy eigenvalue 
+    in Hartree unit.
     """
 
     for scalar_arg in [a, b]: assert isinstance(scalar_arg, Real)
@@ -147,17 +153,43 @@ def Gaussian1D(x,t,k_x):
         * np.exp(-1.0/(1+2j*t) * (x - 1j*k_x/2)**2)
 
 
+# def Gaussian2D(x,y,t,k_x,k_y):
+#     return (2/np.pi)**(0.5) \
+#         * (1.0/(1+2j*t)) \
+#         * np.exp(-1.0/4 * (k_x**2 + k_y**2)) \
+#         * np.exp(-1.0/(1+2j*t) * ((x - 1j*k_x/2.0)**2 + (y - 1j*k_y/2.0)**2))
+
 def Gaussian2D(x,y,t,k_x,k_y):
-    return (2/np.pi)**(0.5) \
-        * (1.0/(1+2j*t)) \
-        * np.exp(-1.0/4 * (k_x**2 + k_y**2)) \
-        * np.exp(-1.0/(1+2j*t) * ((x - 1j*k_x/2.0)**2 + (y - 1j*k_y/2.0)**2))
+    return Gaussian1D(x,t,k_x) * Gaussian1D(y,t,k_y)
 
 def Gaussian3D(x,y,z,t,k_x,k_y,k_z):
-    return (2/np.pi)**(0.75) \
-        * (1.0/(1+2j*t))**(1.5) \
-        * np.exp(-1.0/4 * (k_x**2 + k_y**2 + k_z**2)) \
-        * np.exp(-1.0/(1+2j*t) * ( (x - 1j*k_x/2.0)**2 + (y - 1j*k_y/2.0)**2 + (z - 1j*k_z/2.0)**2 ) )
+    return Gaussian1D(x,t,k_x) * Gaussian1D(y,t,k_y) * Gaussian1D(z,t,k_z)
+
+# def Gaussian3D(x,y,z,t,k_x,k_y,k_z):
+#     return (2/np.pi)**(0.75) \
+#         * (1.0/(1+2j*t))**(1.5) \
+#         * np.exp(-1.0/4 * (k_x**2 + k_y**2 + k_z**2)) \
+#         * np.exp(-1.0/(1+2j*t) * ( (x - 1j*k_x/2.0)**2 + (y - 1j*k_y/2.0)**2 + (z - 1j*k_z/2.0)**2 ) )
+
+
+def gradient_Gaussian1D(x,t,k_x):
+    _chain = (-2.0/np.sqrt(1.0+2.0j*t)) * (x-0.5j*k_x)
+    return Gaussian1D(x,t,k_x) * _chain
+
+# def gradient_Gaussian2D(x,y,t,k_x,k_y):
+#     return (gradient_Gaussian1D(x,t,k_x) * Gaussian1D(y,t,k_y), Gaussian1D(x,t,k_x) * gradient_Gaussian1D(y,t,k_y))
+
+def gradient_Gaussian2D(x,y,z,t,k_x,k_y,k_z):
+    _gaussian2D = Gaussian2D(x,y,z,t,k_x,k_y,k_z)
+    _chain_base = (-2.0/np.sqrt(1.0+2.0j*t))
+    return tuple(_gaussian2D * _chain_base * (x_i - 0.5j*k_x_i) 
+            for x_i, k_x_i in zip((x,y),(k_x,k_y)))
+
+def gradient_Gaussian3D(x,y,z,t,k_x,k_y,k_z):
+    _gaussian3D = Gaussian3D(x,y,z,t,k_x,k_y,k_z)
+    _chain_base = (-2.0/np.sqrt(1.0+2.0j*t))
+    return tuple(_gaussian3D * _chain_base * (x_i - 0.5j*k_x_i) 
+            for x_i, k_x_i in zip((x,y,z),(k_x,k_y,k_z)))
 
 
 def waveInBox(x,t,n,L=1):
