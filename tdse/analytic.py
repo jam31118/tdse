@@ -208,3 +208,22 @@ def superposedWaveInBox(x,t,L,n_list=[], coef=[]):
 		result += coef[index] * waveInBox(x,t,n,L)
 	return result
 
+
+## Energy eigenfunction for the simple harmonic oscillator
+
+from scipy.special import factorial, hermite
+
+def harmonic_oscillator_eigenfunc(x_arr, n, omega):
+    """
+    evaluate n-th energy eigenfunction of simple harmonic oscillator
+
+    an atomic unit is used
+    """
+
+    hermite_n = hermite(n)
+    _func = np.exp(-omega/2.0*np.square(x_arr)) * hermite_n(np.sqrt(omega)*x_arr)
+    _func *= 1.0/np.sqrt((2**n) * factorial(n)) * (omega / np.pi) ** (0.25)
+
+    return _func
+
+
