@@ -15,3 +15,8 @@ def eval_norm_trapezoid(x_arr, psi_arr):
     return _norm
 
 
+## Normalization routine
+def normalize_trapezoid(x_arr, psi_arr):
+    _norm = eval_norm_trapezoid(x_arr, psi_arr)
+    psi_arr[:] *= 1.0 / np.sqrt(_norm)
+
