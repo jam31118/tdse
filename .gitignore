@@ -1,0 +1,4 @@
+build/
+tdse.egg-info/
+__pycache__/
+*.so
