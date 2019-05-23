@@ -145,6 +145,9 @@ def hydrogen_phi_nlm(r, n, l, m, exact_factorial=False):
 
 
 
+def Gaussian1D_k_t0(k,k_x):
+    return (2.0*np.pi)**(-0.25) * np.exp(-0.25*(k-k_x)**2)
+
 
 def Gaussian1D(x,t,k_x):
     return (2/np.pi)**(0.25) \
