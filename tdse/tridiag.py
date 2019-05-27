@@ -1,5 +1,8 @@
 from .matrix import mat_vec_mul_tridiag, gaussian_elimination_tridiagonal
 
+def get_tridiag_shape(N):
+    return (3, N)
+
 ## Define macro function for tridiag datatype
 def tridiag_forward(tridiag, v, b):
     """
