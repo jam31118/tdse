@@ -13,10 +13,11 @@ def get_D2_tridiag(N, h):
     _D2 *= 1.0 / (h * h)
     return _D2
 
-def mul_tridiag_and_diag(T, D):
+def mul_tridiag_and_diag(T, D, dtype=None):
     """TD:tridiag / D;tridiag"""
     assert T.shape == (3,D.size) and D.shape == (T.shape[1],)
-    _TD = np.empty(T.shape, dtype=float)
+    if dtype is None: dtype = D.dtype
+    _TD = np.empty(T.shape, dtype=dtype)
     _TD[0,1:], _TD[1,:], _TD[2,:-1] = T[0,1:] * D[:-1], T[1,:] * D[:], T[2,:-1] * D[1:]
     return _TD
 
