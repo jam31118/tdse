@@ -6,11 +6,13 @@ from ..tridiag import tridiag_forward, tridiag_backward
 
 
 def eval_energy_spectrum_for_1D_hamil(
-        sf_arr, x_arr, V_x_arr, E_arr, winop_n, gamma):
+        sf_arr, x_arr, V_x_arr, E_arr, winop_n, gamma, use_only_real_pot=True):
     
     ## Define some variables
     _N_x = x_arr.size
     _delta_x = x_arr[1] - x_arr[0]
+    _V_x_arr = V_x_arr
+    if use_only_real_pot: _V_x_arr = V_x_arr.real
     
     ## Allocate memory
     # for output
@@ -22,7 +24,7 @@ def eval_energy_spectrum_for_1D_hamil(
     ## Evaluate constant components
     D2 = get_D2_tridiag(_N_x, _delta_x)
     M2 = get_M2_tridiag(_N_x)
-    M2V = mul_tridiag_and_diag(M2, V_x_arr)
+    M2V = mul_tridiag_and_diag(M2, _V_x_arr)
 
     tridiag_shape = M2.shape
     M2H = np.empty(tridiag_shape, dtype=float)
