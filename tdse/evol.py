@@ -20,7 +20,7 @@ def mul_tridiag_and_diag(T, D, dtype=None):
     assert T.shape == (3,D.size) and D.shape == (T.shape[1],)
     if dtype is None: dtype = D.dtype
     _TD = np.empty(T.shape, dtype=dtype)
-    _TD[0,1:], _TD[1,:], _TD[2,:-1] = T[0,1:] * D[:-1], T[1,:] * D[:], T[2,:-1] * D[1:]
+    _TD[0,1:],_TD[1,:],_TD[2,:-1] = T[0,1:]*D[:-1],T[1,:]*D[:],T[2,:-1]*D[1:]
     _TD[0,0], _TD[2,-1] = 0.0, 0.0
     return _TD
 
