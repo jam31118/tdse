@@ -174,3 +174,46 @@ def get_error_over_delta_x_power_for_1st_deriv_and_2nd_order_accuracy(fx, delta_
     
     return m_arr_ana_estimated
 
+
+
+from scipy.special import factorial
+from numpy.linalg import solve
+
+def eval_deriv_on_equidistanced_grid(x_p_arr, x_arr, sf_arr, orders, N_s):
+    """
+    # Argument
+    `x_arr`: equi-distanced array
+    """
+    
+    ## Define variables
+    _N_p, _N_x = x_p_arr.size, x_arr.size
+    _delta_x = x_arr[1] - x_arr[0]
+    
+    ## Construct an array of indices of first stencil for each particle position (`x_p`)
+    _i_p_arr = np.asarray((x_p_arr - x_arr[0]) // _delta_x, dtype=int)
+    _i_s0_p_arr_unshift = _i_p_arr - int((N_s//2) - 1)
+    _i_s0 = _i_s0_p_arr_unshift # aliasing
+    _i_s0_p_arr = _i_s0 - (_i_s0 < 0) * _i_s0 - (_i_s0 + N_s - _N_x > 0) * (_i_s0 + N_s - _N_x)
+
+    ## Construct an array of power matrices
+    _pow_mat = np.empty((_N_p,N_s,N_s), dtype=float)
+    _pow_mat[:,0,:] = 1.0
+    for _s_idx in range(N_s):
+        _pow_mat[:,1,_s_idx] = (x_arr[_i_s0_p_arr+_s_idx] - x_p_arr)
+    for _s_pow_idx in range(2,N_s):
+        _pow_mat[:,_s_pow_idx,:] = _pow_mat[:,_s_pow_idx-1,:] * _pow_mat[:,1,:]
+
+    ## Evaluate FD derivatives
+    _deriv_sf_arr = np.zeros((len(orders), _N_p), dtype=sf_arr.dtype)
+    for _deriv_order, _deriv_sf in zip(orders, _deriv_sf_arr):
+        # Construct matrix on right for finite-difference linear system
+        _b_mat = np.zeros((_N_p,N_s), dtype=float)
+        _b_mat[:,_deriv_order] = factorial(_deriv_order, exact=True)
+        # Evaluate coefficient matrix
+        _coef_mat = solve(_pow_mat, _b_mat)
+        # Get derivative of state function by linear combination
+        for _s in range(N_s):
+            _deriv_sf += sf_arr[_i_s0_p_arr+_s] * _coef_mat[:,_s]
+    
+    return _deriv_sf_arr
+
