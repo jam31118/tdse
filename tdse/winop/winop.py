@@ -19,7 +19,6 @@ def eval_energy_spectrum_for_1D_hamil(
     spectrum_E_arr = np.empty_like(E_arr, dtype=float)
     # for intermediate result
     right_arr = np.empty_like(x_arr, dtype=complex)
-#    root_W_sf_arr = np.empty_like(x_arr, dtype=complex)
 
     ## Evaluate constant components
     D2 = get_D2_tridiag(_N_x, _delta_x)
@@ -30,11 +29,10 @@ def eval_energy_spectrum_for_1D_hamil(
     M2H = np.empty(tridiag_shape, dtype=float)
     left_tridiag = np.empty(tridiag_shape, dtype=complex)
     gamma_M2 = np.empty(tridiag_shape, dtype=complex)
-    gamma_M2[:] = gamma * M2  # np.empty(tridiag_shape, dtype=float)
+    gamma_M2[:] = gamma * M2 
 
     norm_const = np.sin(np.pi/pow(2,winop_n)) / (np.pi/pow(2,winop_n))
-#    tridiag_forward(gamma_M2, sf_arr, right_arr)
-    M2H[:] = -0.5*D2 + M2V #+ (j*gamma)*M2
+    M2H[:] = -0.5*D2 + M2V
 
     ## Evaluate energy-dependent values
     for E_idx, E0 in enumerate(E_arr):

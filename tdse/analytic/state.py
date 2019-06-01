@@ -179,6 +179,13 @@ def gradient_Gaussian1D(x,t,k_x):
     _chain = (-2.0/np.sqrt(1.0+2.0j*t)) * (x-0.5j*k_x)
     return Gaussian1D(x,t,k_x) * _chain
 
+def laplacian_Gaussian1D(x,t,k_x):
+    _chain_deriv = (-2.0/np.sqrt(1.0+2.0j*t))
+    _chain = _chain_deriv * (x-0.5j*k_x)
+    _val = Gaussian1D(x,t,k_x) * (_chain * _chain + _chain_deriv)
+    return _val
+
+
 # def gradient_Gaussian2D(x,y,t,k_x,k_y):
 #     return (gradient_Gaussian1D(x,t,k_x) * Gaussian1D(y,t,k_y), Gaussian1D(x,t,k_x) * gradient_Gaussian1D(y,t,k_y))
 

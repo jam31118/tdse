@@ -18,5 +18,6 @@ def tridiag_backward(tridiag, v, b):
     the lower offdiagonal should be tridiag[0,1:],
     the upper offdiagonal should be tridiag[2,:-1]
     """
-    v[:] = gaussian_elimination_tridiagonal(tridiag[1,:], tridiag[0,1:], tridiag[2,:-1], b)
+    v[:] = gaussian_elimination_tridiagonal(
+            tridiag[1,:], tridiag[0,1:], tridiag[2,:-1], b)
 

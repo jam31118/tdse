@@ -48,7 +48,7 @@ PyObject *return_tuple;
 // Define wrapper for forward matrix multiplication for tridiagonals
 static PyObject *matrix_c_mat_vec_mul_tridiag(PyObject *self, PyObject *args) {
   
-  std::cout << "at the head of matrix_c_mat_vec_mul_tridiag()\n";
+//  std::cout << "at the head of matrix_c_mat_vec_mul_tridiag()\n";
 
   PyObject *alpha_arg = NULL, *beta_arg = NULL, *gamma_arg = NULL, *v_arg = NULL;
   PyObject *alpha_obj = NULL, *beta_obj = NULL, *gamma_obj = NULL, *v_obj = NULL;
@@ -88,7 +88,7 @@ static PyObject *matrix_c_mat_vec_mul_tridiag(PyObject *self, PyObject *args) {
   v_obj = PyArray_FROM_OTF(v_arg, NPY_NOTYPE, NPY_IN_ARRAY);
   if ( (v_obj == NULL) && (PyArray_NDIM(v_obj) != ndim) ) { goto fail; }
 
-  std::cout << "generated objects\n";
+//  std::cout << "generated objects\n";
   in_obj_array[0] = alpha_obj;
   in_obj_array[1] = beta_obj;
   in_obj_array[2] = gamma_obj;
