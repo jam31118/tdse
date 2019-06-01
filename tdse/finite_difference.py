@@ -175,6 +175,7 @@ def get_error_over_delta_x_power_for_1st_deriv_and_2nd_order_accuracy(fx, delta_
     return m_arr_ana_estimated
 
 
+from numbers import Integral
 
 from scipy.special import factorial
 from numpy.linalg import solve
@@ -184,6 +185,8 @@ def eval_deriv_on_equidistanced_grid(x_p_arr, x_arr, sf_arr, orders, N_s):
     # Argument
     `x_arr`: equi-distanced array
     """
+    ## Check input arguments
+    for _deriv_order in orders: assert isinstance(_deriv_order, Integral)
     
     ## Define variables
     _N_p, _N_x = x_p_arr.size, x_arr.size
@@ -203,17 +206,37 @@ def eval_deriv_on_equidistanced_grid(x_p_arr, x_arr, sf_arr, orders, N_s):
     for _s_pow_idx in range(2,N_s):
         _pow_mat[:,_s_pow_idx,:] = _pow_mat[:,_s_pow_idx-1,:] * _pow_mat[:,1,:]
 
+#    print(_pow_mat)
+
     ## Evaluate FD derivatives
-    _deriv_sf_arr = np.zeros((len(orders), _N_p), dtype=sf_arr.dtype)
-    for _deriv_order, _deriv_sf in zip(orders, _deriv_sf_arr):
-        # Construct matrix on right for finite-difference linear system
-        _b_mat = np.zeros((_N_p,N_s), dtype=float)
-        _b_mat[:,_deriv_order] = factorial(_deriv_order, exact=True)
-        # Evaluate coefficient matrix
-        _coef_mat = solve(_pow_mat, _b_mat)
-        # Get derivative of state function by linear combination
+    _N_o = len(orders)
+    _deriv_sf_arr = np.zeros((_N_o, _N_p), dtype=sf_arr.dtype)
+
+    # Construct matrix on right (`_b_mat`) for finite-difference linear system
+    _b_mat = np.zeros((_N_p,N_s,_N_o), dtype=float)
+    for _idx, _order in enumerate(orders):
+        _b_mat[:,_order,_idx] = factorial(_order, exact=True)
+
+    # Evaluate coefficient matrix
+    _coef_mat = solve(_pow_mat, _b_mat)
+
+    # Get derivative of state function by linear combination
+    for _idx, _order in enumerate(orders):
         for _s in range(N_s):
-            _deriv_sf += sf_arr[_i_s0_p_arr+_s] * _coef_mat[:,_s]
+            _deriv_sf_arr[_idx] += sf_arr[_i_s0_p_arr+_s] * _coef_mat[:,_s,_idx]
+
+#    for _deriv_order, _deriv_sf in zip(orders, _deriv_sf_arr):
+        # Construct matrix on right for finite-difference linear system
+#        _b_mat = np.zeros((_N_p,N_s), dtype=float)
+#        _b_mat[:,_deriv_order] = factorial(_deriv_order, exact=True)
+        # Evaluate coefficient matrix
+#        _coef_mat = solve(_pow_mat, _b_mat)
+        # Get derivative of state function by linear combination
+#        for _s in range(N_s):
+#            _deriv_sf += sf_arr[_i_s0_p_arr+_s] * _coef_mat[:,_s,_deriv_order]
+#        _deriv_sf *= 1.0 / pow(_delta_x,_deriv_order)
+
+#        print(_b_mat)
     
     return _deriv_sf_arr
 
