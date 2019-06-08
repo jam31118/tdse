@@ -119,3 +119,31 @@ def move_to_canonical_range_spherical_coord_arr(rho_arr, theta_arr, phi_arr):
     phi_arr[_phi_mask] %= (2.0*pi)
 
 
+
+## Averaging under spherical coordinate
+def _p_integrand(t, P_func, rho0, phi0):
+    
+    _rho = np.sqrt(rho0*rho0 + t*t)
+    _theta = np.pi / 2.0 - np.arctan2(t,rho0)
+    _phi = phi0
+    _coord = (_rho, _theta, _phi)
+    
+    _Pval = P_func(_coord)
+    _dldt_abs = 1.0
+    _integrand = _Pval * _dldt_abs
+    
+    return _integrand
+
+from .integral import numerical_integral_trapezoidal
+
+def P_bar(rho0, phi0, P_func, z0, N_t=100):
+    
+    _t_arr = np.linspace(-z0, z0, N_t)
+    _integrand_arr = _p_integrand(_t_arr, P_func, rho0, phi0)
+    _P_bar_val = 1.0 / (2.0 * z0) * numerical_integral_trapezoidal(_t_arr, _integrand_arr)
+    
+    return _P_bar_val
+
+P_bar_vec = np.vectorize(P_bar, excluded=['P_func', 'z0', 'N_t'])
+
+
