@@ -125,6 +125,7 @@ def _p_integrand(t, P_func, rho0, phi0):
     
     _rho = np.sqrt(rho0*rho0 + t*t)
     _theta = np.pi / 2.0 - np.arctan2(t,rho0)
+    _theta *= 0.9999999
     _phi = phi0
     _coord = (_rho, _theta, _phi)
     
