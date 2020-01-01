@@ -6,6 +6,7 @@ the Time Dependent Schr\"{o}dinger Equation
 from numbers import Real, Integral
 
 import numpy as np
+from numpy import pi
 from scipy import special
 from scipy.optimize import brentq
 
@@ -145,24 +146,39 @@ def hydrogen_phi_nlm(r, n, l, m, exact_factorial=False):
 
 
 
-def gaussian_x_1D(x,mu,sigma):
-    return 1.0 / (2.0*pi*sigma**2)**0.25 * np.exp(-(x-mu)**2 / (4.0*sigma**2))
+def gaussian_x_1D(x,mu_x,sigma_x):
+    return 1.0/(2*pi*sigma_x**2)**0.25 * np.exp(-(x-mu_x)**2 / (4*sigma_x**2))
 
-def gaussian_k_1D(k,x_mu,x_sigma):
-    return (2.0*x_sigma**2/pi)**0.25 * np.exp(-1.0j*k*x_mu - k**2 * sigma**2)
+def gaussian_k_1D(k,mu_x,sigma_x):
+    return (2.0*sigma_x**2/pi)**0.25 * np.exp(-1.0j*k*mu_x - k**2 * sigma_x**2)
 
-def gaussian_x_t_1D(x,t,mu,sigma,t0=0.0,hbar=1.0,m_e=1.0):
-    _z0 = sigma**2 + hbar/(2.0*m_e)*(t-t0)*1.0j
-    _const = 1.0 / (2.0*pi*sigma**2)**0.25
+def gaussian_x_t_1D(x,t,mu,sigma,t0=0.0,hbar=1.0,m=1.0):
+    """
+    mu: expectation value of 'x' at time 't0'
+    sigma: standard deviation of 'x' at time 't0'
+    m: mass of the particle. If set to '1.0', it represents atomic units
+    """
+    _z0 = sigma**2 + hbar/(2.0*m)*(t-t0)*1.0j
+    _const = (sigma**2 / (2.0*pi))**0.25
     return _const / np.sqrt(_z0) * np.exp(-(x-mu)**2 / (4.0*_z0))
     
 
 
 def Gaussian1D_k_t0(k,k_x):
+    """
+    Probability amplitude in k-basis with sigma_x = 0.5, mu_x = 0.0 at t0 = 0.0
+    
+    It is given in atomic unit system where $\hbar$=1 a.u., $m$=1 a.u.
+    """
     return (2.0*np.pi)**(-0.25) * np.exp(-0.25*(k-k_x)**2)
 
 
 def Gaussian1D(x,t,k_x):
+    """
+    Probability amplitude in x-basis with sigma_x = 0.5, mu_x = 0.0 at t0 = 0.0
+    
+    It is given in atomic unit system where $\hbar$=1 a.u., $m$=1 a.u.
+    """
     return (2/np.pi)**(0.25) \
         * np.sqrt(1.0/(1+2j*t)) \
         * np.exp(-1.0/4 * (k_x**2)) \
@@ -189,11 +205,11 @@ def Gaussian3D(x,y,z,t,k_x,k_y,k_z):
 
 
 def gradient_Gaussian1D(x,t,k_x):
-    _chain = (-2.0/np.sqrt(1.0+2.0j*t)) * (x-0.5j*k_x)
+    _chain = (-2.0/(1.0+2.0j*t)) * (x-0.5j*k_x)
     return Gaussian1D(x,t,k_x) * _chain
 
 def laplacian_Gaussian1D(x,t,k_x):
-    _chain_deriv = (-2.0/np.sqrt(1.0+2.0j*t))
+    _chain_deriv = (-2.0/(1.0+2.0j*t))
     _chain = _chain_deriv * (x-0.5j*k_x)
     _val = Gaussian1D(x,t,k_x) * (_chain * _chain + _chain_deriv)
     return _val
