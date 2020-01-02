@@ -162,6 +162,12 @@ def gaussian_x_t_1D(x,t,mu,sigma,t0=0.0,hbar=1.0,m=1.0):
     _const = (sigma**2 / (2.0*pi))**0.25
     return _const / np.sqrt(_z0) * np.exp(-(x-mu)**2 / (4.0*_z0))
     
+def gaussian_k_t_1D(k,t,mu_x,sigma_x,t0=0.0,hbar=1.0,m=1.0):
+    _energy_k = (hbar * k)**2 / (2*m) 
+    _omega_k = _energy_k / hbar
+    _propagator = np.exp(- 1.0j * _omega_k * (t - t0))
+    return gaussian_k_1D(k,mu_x,sigma_x) * _propagator
+
 
 
 def Gaussian1D_k_t0(k,k_x):
