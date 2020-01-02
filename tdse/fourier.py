@@ -2,6 +2,23 @@ import numpy as np
 
 from tdse.integral import numerical_integral_trapezoidal as int_trapz
 
+from numpy.fft import fft
+
+def transform_x_to_k_space_fft(psi_x_t_arr, delta_x):
+    """ Transform the given state function in x-space (position) to k-space (wave vector)
+    
+    'psi_x_t_arr': state function in x-space (position)
+    'delta_x': grid spacing of x-array
+    """
+    _N = psi_x_t_arr.size
+    _minus_1_power_n = 1 - 2*(np.arange(_N)%2)  # (-1)^n
+    _coef_arr = delta_x * 1.0 / np.sqrt(2*pi) * (-1.0j)**N * _minus_1_power_n
+    _psi_k_t_arr = _coef_arr * fft(_minus_1_power_n * psi_x_t_arr, _N)
+    return _psi_k_t_arr
+
+
+
+
 
 def fourier_forward(f_x_arr, x_arr, k_arr):
     _f_k_arr = np.empty_like(k_arr, dtype=complex)
