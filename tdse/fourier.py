@@ -12,7 +12,7 @@ def transform_x_to_k_space_fft(psi_x_t_arr, delta_x):
     """
     _N = psi_x_t_arr.size
     _minus_1_power_n = 1 - 2*(np.arange(_N)%2)  # (-1)^n
-    _coef_arr = delta_x * 1.0 / np.sqrt(2*pi) * (-1.0j)**N * _minus_1_power_n
+    _coef_arr = delta_x * 1.0 / np.sqrt(2*pi) * (-1.0j)**_N * _minus_1_power_n
     _psi_k_t_arr = _coef_arr * fft(_minus_1_power_n * psi_x_t_arr, _N)
     return _psi_k_t_arr
 
