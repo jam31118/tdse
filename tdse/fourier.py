@@ -2,21 +2,34 @@ import numpy as np
 
 from tdse.integral import numerical_integral_trapezoidal as int_trapz
 
-from numpy.fft import fft
+from numpy.fft import fft, ifft
 
-def transform_x_to_k_space_fft(psi_x_t_arr, delta_x):
-    """ Transform the given state function in x-space (position) to k-space (wave vector)
+def transform_x_to_k_space_fft(psi_x_arr, delta_x):
+    """ Transforms the given state function in x-space (position) 
+    to that of k-space (wave vector)
     
-    'psi_x_t_arr': state function in x-space (position)
-    'delta_x': grid spacing of x-array
+    'psi_x_arr': state function in x-space (position)
+    'delta_x': grid spacing of x-array (equidistant)
     """
-    _N = psi_x_t_arr.size
-    _minus_1_power_n = 1 - 2*(np.arange(_N)%2)  # (-1)^n
+    _N = psi_x_arr.size
+    _minus_1_power_n = 1 - 2*(np.arange(_N, dtype=int) % 2)  # i.e. (-1)^n
     _coef_arr = delta_x * 1.0 / np.sqrt(2*pi) * (-1.0j)**_N * _minus_1_power_n
-    _psi_k_t_arr = _coef_arr * fft(_minus_1_power_n * psi_x_t_arr, _N)
-    return _psi_k_t_arr
+    _psi_k_arr = _coef_arr * fft(_minus_1_power_n * psi_x_arr, _N)
+    return _psi_k_arr
 
-
+def transform_k_to_x_space_ifft(psi_k_arr, delta_k):
+    """ Transforms the given state function in k-space (wave vector) 
+    that of x-space (position)
+    
+    'psi_k_arr': state function in k-space (wave vector)
+        The wave vector represents momentum in orthodox quantum mechanics.
+    'delta_k': grid spacing of k-array (equidistant)
+    """
+    _N = psi_k_arr.size
+    _minus_1_power_n = 1 - 2*(np.arange(_N, dtype=int) % 2) # i.e. (-1)^n
+    _coef_arr = delta_k / np.sqrt(2*pi) * (1.0j)**_N * _minus_1_power_n * _N
+    _psi_x_arr = _coef_arr * ifft(_minus_1_power_n * psi_k_arr, _N)
+    return _psi_x_arr
 
 
 
