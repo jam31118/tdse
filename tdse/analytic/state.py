@@ -168,6 +168,11 @@ def gaussian_k_t_1D(k,t,mu_x,sigma_x,t0=0.0,hbar=1.0,m=1.0):
     _propagator = np.exp(- 1.0j * _omega_k * (t - t0))
     return gaussian_k_1D(k,mu_x,sigma_x) * _propagator
 
+def dx_gaussian_x_t_1D(x,t,mu,sigma,t0=0.0,hbar=1.0,m=1.0):
+    _z0 = sigma**2 + hbar/(2.0*m)*(t-t0)*1.0j
+    return -(x-mu) / (2.0*_z0) * gaussian_x_t_1D(x,t,mu,sigma,t0,hbar,m)
+
+
 
 
 def Gaussian1D_k_t0(k,k_x):
