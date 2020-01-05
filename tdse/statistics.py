@@ -66,8 +66,10 @@ def thres_to_get_given_norm(norm, norm_tol, fx, *dxargs):
     _norm_deviation = _f(_thres0, *_fargs)
     if abs(_norm_deviation) >= norm_tol:
         _mesg_form = "The norm(={}) at found threshold " \
-            + "is out of norm tolerence range({} <= norm <= {})"
-        _mesg = _mesg.format(norm+_norm_deviation,norm-norm_tol,norm+norm_tol)
+            + "is out of norm tolerence range({} <= norm <= {}).\n" \
+            + "Consider rasing `norm_tol` to enlarge the tolerence range"
+        _mesg = _mesg_form.format(
+                norm+_norm_deviation,norm-norm_tol,norm+norm_tol)
         raise Exception(_mesg)
 
     return _thres0
