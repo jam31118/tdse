@@ -13,6 +13,10 @@ class ReducedSupport(list):
         _iterable = (x_arr[i:i+l] for i, l in zip(start_indices, lengths))
 
         super().__init__(_iterable)
+
+        self.index_exp_list = [
+            np.index_exp[i:i+l] 
+            for i, l in zip(self.start_indices, self.lengths)]
     
     @classmethod
     def from_distribution_and_threshold(_class, x_arr, fx_arr, fx_threshold):
@@ -42,6 +46,7 @@ class ReducedSupport(list):
         return _sum
 
 
+<<<<<<< HEAD
 from .integral import integrate_on_reg_grid
 
 def norm_above_thres(thres, fx, *dxargs):
@@ -73,5 +78,33 @@ def thres_to_get_given_norm(norm, norm_tol, fx, *dxargs):
         raise Exception(_mesg)
 
     return _thres0
+=======
+
+from scipy.optimize import brentq
+
+def eval_prob_density_threshold(x_arr, fx_arr, norm_to_match, norm_tol):
+    """Evaluates a threshold of the given probability density"""
+
+    def _ff(_fx_thres, _x_arr, _fx_arr, _norm_to_match):
+        _norm = ReducedSupport.from_distribution_and_threshold(
+            _x_arr, _fx_arr, _fx_thres).integrate_distribution(_fx_arr)
+        return _norm - _norm_to_match
+
+    _fargs = (x_arr, fx_arr, norm_to_match)
+    _x0, _root_info = brentq(_ff, a=0.0, b=fx_arr.max(), 
+                             args=_fargs, full_output=True)
+    
+    if not _root_info.converged:
+        raise Exception("Failed to find the threshold")
+    
+    _norm_deviation = _ff(_x0, x_arr, fx_arr, norm_to_match)
+    _out_of_norm_tol = abs(_norm_deviation) >= norm_tol
+    if _out_of_norm_tol:
+        raise Exception("The norm is out of norm tolerance.\n" \
+                + "The norm at the converged threshold (={}): {}".format(
+                    _x0, _norm_to_match + _norm_deviation))
+    
+    return _x0
+>>>>>>> dc61021eafc2cad7c223f8f5a11cb43d250b7f7f
 
 
