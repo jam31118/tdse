@@ -42,3 +42,34 @@ class ReducedSupport(list):
         return _sum
 
 
+from .integral import integrate_on_reg_grid
+
+def norm_above_thres(thres, fx, *dxargs):
+    _ma = np.ma.array(fx, mask=fx<=thres)
+    _norm = integrate_on_reg_grid(_ma, *dxargs)
+    return _norm
+
+
+from scipy.optimize import brentq
+
+def thres_to_get_given_norm(norm, norm_tol, fx, *dxargs):
+
+    def _f(_thres, _norm, _fx, *_dxargs):
+        _norm = norm_above_thres(_thres, _fx, *_dxargs)
+        return _norm - norm
+    _fargs = (norm, fx,) + dxargs
+
+    _thres0, _res = brentq(_f, a=0.0, b=fx.max(), args=_fargs, full_output=True)
+    if not _res.converged:
+        raise Exception("The solution not converged")
+
+    _norm_deviation = _f(_thres0, *_fargs)
+    if abs(_norm_deviation) >= norm_tol:
+        _mesg_form = "The norm(={}) at found threshold " \
+            + "is out of norm tolerence range({} <= norm <= {})"
+        _mesg = _mesg.format(norm+_norm_deviation,norm-norm_tol,norm+norm_tol)
+        raise Exception(_mesg)
+
+    return _thres0
+
+
