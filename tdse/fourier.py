@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import pi
 
 from tdse.integral import numerical_integral_trapezoidal as int_trapz
 
@@ -30,6 +31,34 @@ def transform_k_to_x_space_ifft(psi_k_arr, delta_k):
     _coef_arr = delta_k / np.sqrt(2*pi) * (1.0j)**_N * _minus_1_power_n * _N
     _psi_x_arr = _coef_arr * ifft(_minus_1_power_n * psi_k_arr, _N)
     return _psi_x_arr
+
+
+def construct_x_and_k_arr_from_constraint(
+        max_delta_x, max_delta_k, min_x_radius, min_k_radius):
+    """
+    Construct arrays for x and k grid at the Nyquist limit.
+    
+    The number of array elements is `N = 2^n` for an integer `n`
+    """
+
+    _x_radius = max((min_x_radius, pi / max_delta_k))
+    _delta_k = pi / _x_radius
+    assert _delta_k <= max_delta_k
+    
+    _min_N = 2 / _delta_k * max((min_k_radius, pi / max_delta_x))
+    _N = 2**int(np.ceil(np.log2(_min_N)))
+    _k_radius = _delta_k * _N / 2
+    
+    _delta_x = pi / _k_radius
+    assert _delta_x <= max_delta_x 
+
+    _x_arr = -pi/_delta_k + np.arange(_N)*_delta_x
+    _k_arr = -pi/_delta_x + np.arange(_N)*_delta_k
+
+    return _x_arr, _k_arr
+
+
+
 
 
 
