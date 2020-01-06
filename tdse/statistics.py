@@ -53,8 +53,13 @@ def eval_prob_density_threshold(x_arr, fx_arr, norm_to_match, norm_tol):
     """Evaluates a threshold of the given probability density"""
 
     def _ff(_fx_thres, _x_arr, _fx_arr, _norm_to_match):
-        _norm = ReducedSupport.from_distribution_and_threshold(
-            _x_arr, _fx_arr, _fx_thres).integrate_distribution(_fx_arr)
+        _fx_rsup = np.ma.array(_fx_arr, copy=False, mask=~(_fx_arr > _fx_thres))
+        _norm = np.ma.sum(_fx_rsup[:-1] * np.diff(_x_arr))
+        if isinstance(_norm, np.ma.core.MaskedConstant):
+            if np.all(_fx_rsup.mask):
+                _norm = 0.0
+            else: raise Exception(
+                    "Unexpected during norm evaluation of an masked array")
         return _norm - _norm_to_match
 
     _fargs = (x_arr, fx_arr, norm_to_match)
@@ -67,9 +72,10 @@ def eval_prob_density_threshold(x_arr, fx_arr, norm_to_match, norm_tol):
     _norm_deviation = _ff(_x0, x_arr, fx_arr, norm_to_match)
     _out_of_norm_tol = abs(_norm_deviation) >= norm_tol
     if _out_of_norm_tol:
+        print("root info:\n{}".format(_root_info))
         raise Exception("The norm is out of norm tolerance.\n" \
                 + "The norm at the converged threshold (={}): {}".format(
-                    _x0, _norm_to_match + _norm_deviation))
+                    _x0, norm_to_match + _norm_deviation))
     
     return _x0
 
