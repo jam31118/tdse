@@ -33,8 +33,42 @@ def transform_k_to_x_space_ifft(psi_k_arr, delta_k):
     return _psi_x_arr
 
 
+
+## To Improve:
+## ```
+## pow(-1.j, _sum_of_N)
+## ```
+## fix this with a bit more efficient way 
+## possibly using modular operation
+
+from numpy.fft import fftn
+
+def transform_x_to_k_space_fft_Ndim(psi_q, *dqargs):
+    
+    ## Check arguments
+    assert isinstance(psi_q, np.ndarray)
+    assert len(dqargs) == psi_q.ndim
+    for dq in dqargs: assert dq > 0
+    
+    _shape = psi_q.shape
+    _sum_of_N = np.sum(_shape)
+    
+    _m_meshes = np.indices(_shape)
+    _minus_1_pow_m_sum = 1 - 2*((_m_meshes.sum(axis=0))%2)
+    _minus_1_pow_n_sum = _minus_1_pow_m_sum # both meshes have same shape and elements
+    
+    _fft_in = _minus_1_pow_m_sum * psi_q
+    _fft_out = fftn(_fft_in)
+    _const = np.prod(dqargs) / pow(np.sqrt(2*pi), psi_q.ndim) * pow(-1.j, _sum_of_N)
+    _psi_k = _const * _minus_1_pow_n_sum * _fft_out
+    
+    return _psi_k
+
+
+
+
 def construct_x_and_k_arr_from_constraint(
-        max_delta_x, max_delta_k, min_x_radius, min_k_radius):
+        max_delta_x, max_delta_k, min_x_radius, min_k_radius, full_output=False):
     """
     Construct arrays for x and k grid at the Nyquist limit.
     
@@ -55,8 +89,9 @@ def construct_x_and_k_arr_from_constraint(
     _x_arr = -pi/_delta_k + np.arange(_N)*_delta_x
     _k_arr = -pi/_delta_x + np.arange(_N)*_delta_k
 
-    return _x_arr, _k_arr
-
+    _output = (_x_arr, _k_arr)
+    if full_output: _output += (_delta_x, _delta_k, _N)
+    return _output
 
 
 
