@@ -68,22 +68,35 @@ def transform_x_to_k_space_fft_Ndim(psi_q, *dqargs):
 
 
 def transform_k_to_x_space_ifft_Ndim(psi_k, *dkargs):
+    """
+    
+    Parameters
+    ----------
+    psi_k : (...,N1,N2,...,Ndim) numpy.ndarray
+    """
 
     ## Check arguments
     assert isinstance(psi_k, np.ndarray)
-    assert len(dkargs) == psi_k.ndim
+    assert (len(dkargs) <= psi_k.ndim) and (len(dkargs) > 0)
     for dk in dkargs: assert dk > 0
     
-    _shape = psi_k.shape
+    _ndim = len(dkargs)
+    _shape = psi_k.shape[-_ndim:]
     _sum_of_N = np.sum(_shape)
+
+#    print("_shape: ",_shape)
+#    print("_sum_of_N: ",_sum_of_N)
     
     _m_meshes = np.indices(_shape)
     _minus_1_pow_m_sum = 1 - 2*((_m_meshes.sum(axis=0))%2)
     _minus_1_pow_n_sum = _minus_1_pow_m_sum # both meshes are same in values
     
+#    print("_m_meshes.shape: ", _m_meshes.shape)
+#    print("_minus_1_pow_m_sum.shape: ", _minus_1_pow_m_sum.shape)
+
     _ifft_in = _minus_1_pow_m_sum * psi_k
-    _ifft_out = ifftn(_ifft_in)
-    _const = np.prod(dkargs)/pow(np.sqrt(2*pi),psi_k.ndim)*pow(-1.j,_sum_of_N)
+    _ifft_out = ifftn(_ifft_in, axes=tuple(range(-_ndim,0)))
+    _const = np.prod(dkargs)/pow(np.sqrt(2*pi),_ndim)*pow(-1.j,_sum_of_N)
     _const *= np.prod(_shape)
     _psi_q = _const * _minus_1_pow_n_sum * _ifft_out
 
@@ -117,6 +130,53 @@ def construct_x_and_k_arr_from_constraint(
     _output = (_x_arr, _k_arr)
     if full_output: _output += (_delta_x, _delta_k, _N)
     return _output
+
+
+
+def gradient_x_from_k_space(fk, *karr_args):
+    
+    assert isinstance(fk, np.ndarray)
+    assert fk.ndim == len(karr_args)
+    
+    _dk_list = [_karr[1]-_karr[0] for _karr in karr_args]
+    _k_meshes = np.array(np.meshgrid(*karr_args, indexing='ij'))
+    
+    _gradient = transform_k_to_x_space_ifft_Ndim(1.j*_k_meshes*fk, *_dk_list)
+    
+    return _gradient
+
+
+def k_arr_at_Nyquist_limit(x_arr):
+    
+    assert isinstance(x_arr, np.ndarray)
+    assert np.diff(x_arr).std() < 1e-14
+    
+    _dx = x_arr[1] - x_arr[0]
+    _N = x_arr.size
+    _dk = 2*pi/(_N*_dx)
+    _k_arr = -pi/_dx + np.arange(_N, dtype=float) * _dk
+    
+    return _k_arr
+
+
+def gradient_fourier(fx, *xarr_args):
+    
+    assert isinstance(fx, np.ndarray)
+    assert fx.ndim == len(xarr_args)
+    
+    _dx_list = [_xarr[1] - _xarr[0] for _xarr in xarr_args]
+    _fk = transform_x_to_k_space_fft_Ndim(fx, *_dx_list)
+    _k_arrays = [k_arr_at_Nyquist_limit(_xarr) for _xarr in xarr_args]
+    _gradient = gradient_x_from_k_space(_fk, *_k_arrays)
+    
+    return _gradient
+
+
+
+
+
+
+
 
 
 
