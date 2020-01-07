@@ -41,7 +41,9 @@ def transform_k_to_x_space_ifft(psi_k_arr, delta_k):
 ## fix this with a bit more efficient way 
 ## possibly using modular operation
 
-from numpy.fft import fftn
+## [TODO] consider combining the following two routines for code reusing
+
+from numpy.fft import fftn, ifftn
 
 def transform_x_to_k_space_fft_Ndim(psi_q, *dqargs):
     
@@ -55,14 +57,37 @@ def transform_x_to_k_space_fft_Ndim(psi_q, *dqargs):
     
     _m_meshes = np.indices(_shape)
     _minus_1_pow_m_sum = 1 - 2*((_m_meshes.sum(axis=0))%2)
-    _minus_1_pow_n_sum = _minus_1_pow_m_sum # both meshes have same shape and elements
+    _minus_1_pow_n_sum = _minus_1_pow_m_sum # both meshes are same in values
     
     _fft_in = _minus_1_pow_m_sum * psi_q
     _fft_out = fftn(_fft_in)
-    _const = np.prod(dqargs) / pow(np.sqrt(2*pi), psi_q.ndim) * pow(-1.j, _sum_of_N)
+    _const = np.prod(dqargs)/pow(np.sqrt(2*pi),psi_q.ndim)*pow(-1.j,_sum_of_N)
     _psi_k = _const * _minus_1_pow_n_sum * _fft_out
     
     return _psi_k
+
+
+def transform_k_to_x_space_ifft_Ndim(psi_k, *dkargs):
+
+    ## Check arguments
+    assert isinstance(psi_k, np.ndarray)
+    assert len(dkargs) == psi_k.ndim
+    for dk in dkargs: assert dk > 0
+    
+    _shape = psi_k.shape
+    _sum_of_N = np.sum(_shape)
+    
+    _m_meshes = np.indices(_shape)
+    _minus_1_pow_m_sum = 1 - 2*((_m_meshes.sum(axis=0))%2)
+    _minus_1_pow_n_sum = _minus_1_pow_m_sum # both meshes are same in values
+    
+    _ifft_in = _minus_1_pow_m_sum * psi_k
+    _ifft_out = ifftn(_ifft_in)
+    _const = np.prod(dkargs)/pow(np.sqrt(2*pi),psi_k.ndim)*pow(-1.j,_sum_of_N)
+    _const *= np.prod(_shape)
+    _psi_q = _const * _minus_1_pow_n_sum * _ifft_out
+
+    return _psi_q
 
 
 
