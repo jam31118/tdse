@@ -93,6 +93,9 @@ def norm_above_thres(thres, fx, *dxargs):
 from scipy.optimize import brentq
 
 def thres_to_get_given_norm(norm, norm_tol, fx, *dxargs):
+    
+    if not (len(dxargs) > 0):
+        raise ValueError("No grid spacing (`dxargs`) given")
 
     def _f(_thres, _norm, _fx, *_dxargs):
         _norm = norm_above_thres(_thres, _fx, *_dxargs)
