@@ -88,6 +88,8 @@ class LinearPolariVelocityGaugeSystem(System):
         self.t_arr = np.linspace(self.t0, self.t_max, self.N_timepoint)
         assert np.isclose(self.t_arr[1] - self.t_arr[0], self.delta_t_real, 
                 atol=1e-14, rtol=0)  # check consistency
+        self.t_index = 0  # time index `0` of the time array corresponds to `t0`
+
         
         ## Assign to members
         self.A_t_func = A_t_func
@@ -181,13 +183,37 @@ class LinearPolariVelocityGaugeSystem(System):
                 _inner_diff = 1 - np.square(np.abs(_inner_prod))
                 print("[{:03d}] difference between previous and current state function: {:.5e}".format(_t_idx, _inner_diff))
                 if _inner_diff < self._imag_prop_diff_thres: break
+
+        ## Update time index
+        if not imag_prop:
+            self.t_index += num_timestep
         
     
     def go_to_ground_state(self):
-        self.propagate_field_free(num_timestep=self._max_imag_prop_time_steps, imag_prop=True)
+        self.propagate_field_free(
+                num_timestep=self._max_imag_prop_time_steps, imag_prop=True)
 
     
-    def propagate_field_present(self, start_time_index, num_time_step):
+    def propagate_field_present(self,num_time_step=None,start_time_index=None):
+
+        ## Process arguments
+        if num_time_step is None: num_time_step = 1
+        else:
+            if not int(num_time_step) == num_time_step:
+                raise TypeError(
+                        "The `num_time_step` should be an integer." \
+                        + "Given value: {}".format(num_time_step))
+            num_time_step = int(num_time_step)
+
+        ## Configure start time index
+        #_time_index = None
+        if start_time_index is None:
+            start_time_index = self.t_index
+            #_time_index = self.t_index
+        else:
+            raise DeprecationWarning(
+                    "The use of `start_time_index` is deprecieated")
+        #assert _time_index is not None
         
         ## Allocation
         _sf_arr_mid = np.empty_like(self.sf_arr, dtype=complex)
@@ -228,3 +254,8 @@ class LinearPolariVelocityGaugeSystem(System):
             
         tridiag_forward(self._U0_half, self.sf_arr, _sf_arr_mid)
         tridiag_backward(self._U0_half_conj, self.sf_arr, _sf_arr_mid)
+
+        ## Update time index
+        self.t_index += num_time_step
+
+
