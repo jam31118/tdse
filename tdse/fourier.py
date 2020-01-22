@@ -5,14 +5,17 @@ from tdse.integral import numerical_integral_trapezoidal as int_trapz
 
 from numpy.fft import fft, ifft
 
-def transform_x_to_k_space_fft(psi_x_arr, delta_x):
+def transform_x_to_k_space_fft(psi_x_arr, delta_x, axis=-1):
     """ Transforms the given state function in x-space (position) 
     to that of k-space (wave vector)
     
     'psi_x_arr': state function in x-space (position)
     'delta_x': grid spacing of x-array (equidistant)
     """
-    _N = psi_x_arr.size
+    
+    if axis != -1: raise NotImplementedError()
+
+    _N = psi_x_arr.shape[axis]
     _minus_1_power_n = 1 - 2*(np.arange(_N, dtype=int) % 2)  # i.e. (-1)^n
     _coef_arr = delta_x * 1.0 / np.sqrt(2*pi) * (-1.0j)**_N * _minus_1_power_n
     _psi_k_arr = _coef_arr * fft(_minus_1_power_n * psi_x_arr, _N)
