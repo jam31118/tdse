@@ -5,10 +5,17 @@
 #include <iostream>
 
 
-extern "C" { static PyObject *matrix_c_mat_vec_mul_tridiag(PyObject *self, PyObject *args); }
+extern "C" { 
+  static PyObject *matrix_c_mat_vec_mul_tridiag(PyObject *self, PyObject *args); 
+}
 
 static PyMethodDef module_methods[] = {
-  {"mat_vec_mul_tridiag", matrix_c_mat_vec_mul_tridiag, METH_VARARGS, "Foward matrix multiplication for tridiagonal matrix with single vector"}
+  {
+    "mat_vec_mul_tridiag", 
+    matrix_c_mat_vec_mul_tridiag, 
+    METH_VARARGS, 
+    "Foward matrix multiplication for tridiagonal matrix with single vector"
+  }
 };
 
 static PyModuleDef matrix_c = {
@@ -20,14 +27,16 @@ static PyModuleDef matrix_c = {
 };
 
 PyMODINIT_FUNC PyInit_matrix_c(void) {
-  std::cout << "init!\n";
   import_array();
   return PyModule_Create(&matrix_c);
 }
 
 
 template <class T>
-int mat_vec_mul_tridiag_core_template(PyObject *alpha_obj, PyObject *beta_obj, PyObject *gamma_obj, PyObject *v_obj, PyObject *out_obj, long N) {
+int mat_vec_mul_tridiag_core_template(
+    PyObject *alpha_obj, PyObject *beta_obj, PyObject *gamma_obj, 
+    PyObject *v_obj, PyObject *out_obj, long N) 
+{
   // Get pointer to each data array
   T *p_alpha = (T *) PyArray_DATA(alpha_obj);
   T *p_beta = (T *) PyArray_DATA(beta_obj);
@@ -36,7 +45,8 @@ int mat_vec_mul_tridiag_core_template(PyObject *alpha_obj, PyObject *beta_obj, P
   T *p_out = (T *) PyArray_DATA(out_obj);
 
   // Run core C routine
-  if ( mat_vec_mul_tridiag_template<T>(p_alpha, p_beta, p_gamma, p_v, p_out, N) != 0 ) {
+  if ( mat_vec_mul_tridiag_template<T>(
+        p_alpha, p_beta, p_gamma, p_v, p_out, N) != 0 ) {
     PyErr_SetString(PyExc_Exception, "Failed to run `mat_vec_mul_tridiag()`");
     return 1;
   }
@@ -48,8 +58,6 @@ PyObject *return_tuple;
 // Define wrapper for forward matrix multiplication for tridiagonals
 static PyObject *matrix_c_mat_vec_mul_tridiag(PyObject *self, PyObject *args) {
   
-//  std::cout << "at the head of matrix_c_mat_vec_mul_tridiag()\n";
-
   PyObject *alpha_arg = NULL, *beta_arg = NULL, *gamma_arg = NULL, *v_arg = NULL;
   PyObject *alpha_obj = NULL, *beta_obj = NULL, *gamma_obj = NULL, *v_obj = NULL;
   PyObject *out_obj = NULL;
@@ -112,40 +120,39 @@ static PyObject *matrix_c_mat_vec_mul_tridiag(PyObject *self, PyObject *args) {
     all_is_okay &= alpha_dims[dim_index] == gamma_dims[dim_index] + 1;
     all_is_okay &= alpha_dims[dim_index] == v_dims[dim_index];
   }
-  if ( !all_is_okay ) { PyErr_SetString(PyExc_Exception, "Unexpected dimension for alpha | beta | gamma | v"); goto fail; }
+  if ( !all_is_okay ) { 
+    PyErr_SetString(PyExc_Exception, 
+        "Unexpected dimension for alpha | beta | gamma | v");
+    goto fail; 
+  }
   N = alpha_dims[0];
   dims_N[0] = N;
   
   // Check whether all input arrays have same typenum
   typenum = PyArray_TYPE(in_obj_array[0]);
-  for (int i = 1; i < 4; i++) { all_has_same_typenum &= typenum == PyArray_TYPE(in_obj_array[i]); }
-  if ( ! all_has_same_typenum ) { PyErr_SetString(PyExc_Exception, "Inconsistent typenum for input arrays"); goto fail; }
+  for (int i = 1; i < 4; i++) 
+  { all_has_same_typenum &= typenum == PyArray_TYPE(in_obj_array[i]); }
+  if ( ! all_has_same_typenum ) { 
+    PyErr_SetString(PyExc_Exception, "Inconsistent typenum for input arrays"); 
+    goto fail; 
+  }
   
   out_obj = PyArray_SimpleNew(ndim, dims_N, typenum);
 
 
   // Run the core function
   if (typenum == NPY_DOUBLE) {
-    if (mat_vec_mul_tridiag_core_template<double>(alpha_obj, beta_obj, gamma_obj, v_obj, out_obj, N) != 0) { goto fail; }
+    if ( mat_vec_mul_tridiag_core_template<double>(
+          alpha_obj, beta_obj, gamma_obj, v_obj, out_obj, N) != 0 ) 
+    { goto fail; }
   } else if (typenum == NPY_COMPLEX128) {
-    if (mat_vec_mul_tridiag_core_template< std::complex<double> >(alpha_obj, beta_obj, gamma_obj, v_obj, out_obj, N) != 0) { goto fail; }
+    if ( mat_vec_mul_tridiag_core_template< std::complex<double> >(
+          alpha_obj, beta_obj, gamma_obj, v_obj, out_obj, N) != 0 ) 
+    { goto fail; }
   } else {
     PyErr_SetString(PyExc_Exception, "Unexpected typenum");
     goto fail;
   }
-
-//  // Get pointer to each data array
-//  double *p_alpha = PyArray_DATA(alpha_obj);
-//  double *p_beta = PyArray_DATA(beta_obj);
-//  double *p_gamma = PyArray_DATA(gamma_obj);
-//  double *p_v = PyArray_DATA(v_obj);
-//  double *p_out = PyArray_DATA(out_obj);
-//
-//  // Run core C routine
-//  if ( mat_vec_mul_tridiag(p_alpha, p_beta, p_gamma, p_v, p_out, N) != 0 ) {
-//    PyErr_SetString(PyExc_Exception, "Failed to run `mat_vec_mul_tridiag`");
-//    return NULL;
-//  }
 
   // Return results
   return_tuple = Py_BuildValue("N", out_obj);
