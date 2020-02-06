@@ -119,3 +119,34 @@ def thres_to_get_given_norm(norm, norm_tol, fx, *dxargs):
 
 
 
+def mean_and_std_from_prob_density(pdf, x, mean_only=True):
+    """
+    Evaluate mean and standard deviation of given probability density function
+    
+    Caution
+    ----------
+    Do not use for masked array since this routine utilizes `numpy.trapz` 
+    which may result some losses when dealing with the masked array
+    
+    Argument
+    ----------
+    pdf : array-like (...,N)
+        probability density function
+    x : array-like (,N)
+        array of random variable
+        should be monotonically increasing
+        i.e. `x[i] <= x[i+1] for i=0,1,...,N-2`
+    """
+    _pdf, _x = np.array(pdf, copy=False), np.array(x, copy=False)
+    assert _x.ndim == 1 and _pdf.ndim >= 1 and _pdf.shape[-1] == _x.size
+    
+    _x_n_pdf = _x*_pdf
+    _E_X = np.trapz(_x_n_pdf, _x, axis=-1)
+    _mean = _E_X
+    if mean_only: return _mean
+    
+    _x_n_pdf *= _x
+    _E_X2 = np.trapz(_x_n_pdf, _x, axis=-1)
+    _var = _E_X2 - _E_X*_E_X
+    _std = np.sqrt(_var)
+    return _mean, _std
