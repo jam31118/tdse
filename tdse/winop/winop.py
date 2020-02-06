@@ -6,10 +6,69 @@ from ..tridiag import tridiag_forward, tridiag_backward
 
 
 def construct_E_arr_for_winop(E_min_in, E_max_in, gamma):
+    assert (gamma > 0) and (2 * gamma <= E_max_in - E_min_in)
     _start_ind = int((E_min_in / gamma - 1) // 2)
     _end_ind = - int((-1 - E_max_in / gamma) // (2))
     _E_arr = 2*gamma * np.arange(_start_ind, _end_ind, 1) + gamma
     return _E_arr
+
+
+
+def is_an_equidistanced_array(a, return_distance=False, zero_thres=1e-13):
+    _a = np.array(a, copy=False)
+    if _a.ndim != 1: raise NotImplemented("The array dimension should be one")
+    if _a.size <= 2:
+        raise Exception(("The size of given array is not larger than 2, "
+            "thus the concept of 'distance' "
+            "between adjacent elements in the array is undefined"))
+    _delta_a = np.diff(_a)
+    _is_equidistanced = np.all(np.diff(_delta_a) < zero_thres)
+    _result = _is_equidistanced
+    if return_distance: 
+        if _is_equidistanced: _distance = np.average(_delta_a)
+        else: _distance = None
+        _result = (_is_equidistanced,_distance)
+    return _result
+
+
+def convert_winop_E_array_to_momentum_array(E_arr, m=1.0):
+
+    try:
+        _E_arr_is_equidistanced, _delta_E = is_an_equidistanced_array(
+                E_arr, return_distance=True)
+    except Exception as e:
+        raise Exception("The argument 'E_arr' should be equidistanced 1D array")
+    if not _E_arr_is_equidistanced: 
+        raise Exception("The argument 'E_arr' should be equidistanced 1D array")
+    if not (_delta_E > 0):
+        raise Exception("The argument 'E_arr' should be an increasing array")
+    _gamma = _delta_E / 2
+    _E_arr = E_arr
+
+    _posi_E_mask = _E_arr > 0
+    if not np.any(_posi_E_mask):
+        if E_max_in < gamma: raise ValueError(
+                "The argument 'E_max_in' should be larger than 'gamma'")
+        else: raise Exception("Unexpected")
+    _posi_E_arr = _E_arr[_posi_E_mask]
+    _posi_p_arr = np.sqrt(2.0*m*_posi_E_arr)
+    _num_of_posi_E_val = _posi_E_arr.size
+    _num_of_posi_p_val = _num_of_posi_E_val
+    _num_of_momentum = 2 * _num_of_posi_p_val
+    _p_arr = np.empty((_num_of_momentum,), dtype=float)
+    assert _num_of_posi_p_val == _num_of_momentum // 2
+    _p_arr[:_num_of_momentum//2] = - np.flipud(_posi_p_arr)
+    _p_arr[_num_of_momentum//2:] = _posi_p_arr
+
+    return _p_arr
+
+
+def winop_momentum_array(E_min_in, E_max_in, gamma, m=1.0):
+
+    _E_arr = construct_E_arr_for_winop(E_min_in, E_max_in, gamma)
+    _p_arr = convert_winop_E_array_to_momentum_array(_E_arr,m=m)
+    return _p_arr
+
 
 
 def eval_energy_spectrum_for_1D_hamil(

@@ -2,6 +2,12 @@ import numpy as np
 
 ## Enlarging spatial grid and other arrays accordingly
 def enlarge_x_arr(N_plus, x_arr):
+    """
+    
+    Arguments
+    ----------
+    x_arr : should be equidistanced
+    """
     _N_winop = x_arr.size + 2*N_plus
     _x_arr_winop = np.empty((_N_winop,), dtype=float)
     _delta_x = x_arr[1] - x_arr[0]
