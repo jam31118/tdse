@@ -18,7 +18,7 @@ def transform_x_to_k_space_fft(psi_x_arr, delta_x, axis=-1):
     _N = psi_x_arr.shape[axis]
     _minus_1_power_n = 1 - 2*(np.arange(_N, dtype=int) % 2)  # i.e. (-1)^n
     _coef_arr = delta_x * 1.0 / np.sqrt(2*pi) * (-1.0j)**_N * _minus_1_power_n
-    _psi_k_arr = _coef_arr * fft(_minus_1_power_n * psi_x_arr, _N)
+    _psi_k_arr = _coef_arr * fft(_minus_1_power_n * psi_x_arr, _N, axis)
     return _psi_k_arr
 
 def transform_k_to_x_space_ifft(psi_k_arr, delta_k):
