@@ -39,3 +39,4 @@ def get_D1_tridiag(N, h):
     _D1[0,0], _D1[2,-1] = 0.0, 0.0
     return _D1
 
+
