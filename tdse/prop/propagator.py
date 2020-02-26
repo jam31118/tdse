@@ -89,5 +89,5 @@ class Time_Indep_Hamil_Propagator(object):
                     sf_arr-_sf_prev, self.dx)
             if _norm_sq_of_diff < norm_thres: break
             _sf_prev = sf_arr.copy()
-        if _i >= _max_iter: raise Exception("Maximum iteration reached.")
+        if _i >= _max_iter-1: raise Exception("Maximum iteration reached.")
 
