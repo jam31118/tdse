@@ -13,6 +13,8 @@ class Wavefunction_on_Uniform_Grid_Polar_Box_Over_r(Wavefunction):
     defined on a uniform radial grid in a polar box
     """
 
+    dim = 2
+
     @staticmethod
     def eval_at_real_space(wf, dr, phi):
         _phi = asarray(phi)
@@ -57,6 +59,92 @@ class Wavefunction_on_Uniform_Grid_Polar_Box_Over_r(Wavefunction):
         _wf_abs_sq = np.real(wf.conj() * wf)
         return 2.* pi * dr * sum(sum(_wf_abs_sq / _r_arr, axis=-1), axis=-1)
 
+
+    @classmethod
+    def get_each_dimension_of_wf_array(cls, wf):
+        _wf = asarray(wf)
+        if _wf.ndim not in range(1,cls.dim+1): 
+            raise ValueError("Unexpected dimension `wf`: {}".format(_wf.ndim))
+        _Nm, _Nr = (1,_wf.size) if _wf.ndim == 1 else _wf.shape
+        return _Nm, _Nr
+
+
+    @classmethod
+    def wf2Rm(cls, wf):
+        _wf = asarray(wf)
+        _Nm, _Nr = cls.get_each_dimension_of_wf_array(_wf)
+        _Rm_rn_shape = (_Nm, 1+_Nr+1)
+        _Rm_rn = np.empty(_Rm_rn_shape, dtype=wf.dtype)
+        _Rm_rn[:,[0,-1]] = 0.0
+        _Rm_rn[:,1:-1] = _wf
+        # 2nd order finite difference approximation
+        _Rm_rn[0,0] = 2.*_Rm_rn[0,1] - _Rm_rn[0,2] 
+        return _Rm_rn
+
+
+    @staticmethod
+    def _check_consistency_of_Rm_with_wf(Rm, wf):
+        _Rm, _wf = (asarray(_a) for _a in (Rm, wf))
+        _Nr = _wf.shape[-1]
+        _Nr_total = 1+_Nr+1
+        _Rm_shape_expected = _wf.shape[:-1] + (_Nr_total,)
+        if _Rm.shape != _Rm_shape_expected:
+            _msg = ("The shape of `Rm`, `{}`, is inconsistent with `wf`\n"
+                    "Expected shape of Rm: {}")
+            raise ValueError(_msg.format(_Rm.shape, _Rm_shape_expected))
+
+    @classmethod
+    def eval_wf_with_wf_deriv_at_q(cls, q, Rm_rn, grid_dr):
+        """
+        Evaluate wavefunction and its partial derivatives at given coordinate
+        """
+        _r, _phi = q
+        if _r < 0: _r, _phi = -_r, _phi+pi
+
+        _Rm_rn = asarray(Rm_rn)
+        _Nm, _Nr_total = cls.get_each_dimension_of_wf_array(_Rm_rn)
+        assert (_Nm % 2) == 1
+        _m_max = _Nm // 2
+
+        _grid_dr = float(grid_dr)
+        if not (_grid_dr > 0): 
+            _msg = "A grid spacing should be a positive real number. Given: {}"
+            raise ValueError(_msg.format(grid_dr))
+        
+        # Evaluate Rm and its derivatives
+        _rmax = (_Nr_total - 1) * _grid_dr
+        assert _r < _rmax
+
+        _Ns = 4
+        _il = int((_r - 0.0) // _grid_dr)
+        _is0 = (_il-1) \
+                + (_il < 1) * (1 - _il) \
+                + (_il > _Nr_total-3) * (_Nr_total-3 - _il)
+        _r_total_arr = np.arange(_Nr_total) * _grid_dr
+
+        _rn_minus_r = _r_total_arr[_is0:_is0+_Ns] - _r
+        _A = np.empty((_Ns, _Ns), dtype=float)
+        _A[:,0] = 1.0
+        for _is in range(1,_Ns):
+            _A[:,_is] = _A[:,_is-1] * _rn_minus_r / _is
+        _b = _Rm_rn[:,_is0:_is0+_Ns].transpose()
+       
+        try: _Rm_derivs = np.linalg.solve(_A, _b)
+        except np.linalg.LinAlgError as e:
+            raise RuntimeError("Failed to get Rm deriv at q={}".format(q))
+        except: raise Exception("Unexpected error")
+
+        # Evaluate exp(i*m*phi)
+        _im_arr = 1.j * np.arange(-_m_max, _m_max+1, dtype=np.int)
+        _exp_imphi = np.exp(_im_arr * _phi)
+
+        # Evaluate wavefunction and its partial derivatives
+        _Rm_exp_imphi = _Rm_derivs[0] * _exp_imphi
+        _wf_q = np.sum(_Rm_exp_imphi)
+        _dr_wf_q = np.sum(_Rm_derivs[1] * _exp_imphi)
+        _dphi_wf_q = np.sum(_Rm_exp_imphi * _im_arr)
+
+        return _wf_q, _dr_wf_q, _dphi_wf_q
 
 
 
@@ -113,6 +201,8 @@ class Propagator_on_Uniform_Grid_Polar_Box_Over_r(object):
         
         self.Nm = 2 * self.m_max + 1
         self.m_iter = range(-self.m_max, self.m_max+1)
+
+        self.wf_shape = (self.Nm, self.Nr)
         
         if Vr == 0.0: self.Vr = np.zeros((self.Nr,), dtype=np.float)
         else:
