@@ -5,7 +5,7 @@ from math import pi
 import numpy as np
 from numpy import asarray, sum
 
-from .wavefunction import Wavefunction
+from ._base import Wavefunction
 
 class Wavefunction_on_Uniform_Grid_Polar_Box_Over_r(Wavefunction):
     """
@@ -56,7 +56,7 @@ class Wavefunction_on_Uniform_Grid_Polar_Box_Over_r(Wavefunction):
         _wf = asarray(wf)
         _Nr = _wf.shape[-1]
         _r_arr = dr * np.arange(1,_Nr+1)
-        _wf_abs_sq = np.real(wf.conj() * wf)
+        _wf_abs_sq = np.real(_wf.conj() * _wf)
         return 2.* pi * dr * sum(sum(_wf_abs_sq / _r_arr, axis=-1), axis=-1)
 
 
@@ -65,18 +65,25 @@ class Wavefunction_on_Uniform_Grid_Polar_Box_Over_r(Wavefunction):
         _wf = asarray(wf)
         if _wf.ndim not in range(1,cls.dim+1): 
             raise ValueError("Unexpected dimension `wf`: {}".format(_wf.ndim))
-        _Nm, _Nr = (1,_wf.size) if _wf.ndim == 1 else _wf.shape
+        _Nm, _Nr = (1, _wf.size) if _wf.ndim == 1 else _wf.shape
         return _Nm, _Nr
 
 
     @classmethod
-    def wf2Rm(cls, wf):
+    def wf2Rm(cls, wf, dr):
         _wf = asarray(wf)
         _Nm, _Nr = cls.get_each_dimension_of_wf_array(_wf)
+        
+        _grid_dr = float(dr)
+        if not (_grid_dr > 0): 
+            _msg = "A grid spacing should be a positive real number. Given: {}"
+            raise ValueError(_msg.format(grid_dr))
+        _r_arr = _grid_dr * np.arange(1, _Nr+1)
+
         _Rm_rn_shape = (_Nm, 1+_Nr+1)
-        _Rm_rn = np.empty(_Rm_rn_shape, dtype=wf.dtype)
+        _Rm_rn = np.empty(_Rm_rn_shape, dtype=_wf.dtype)
         _Rm_rn[:,[0,-1]] = 0.0
-        _Rm_rn[:,1:-1] = _wf
+        _Rm_rn[:,1:-1] = _wf / _r_arr
         # 2nd order finite difference approximation
         _Rm_rn[0,0] = 2.*_Rm_rn[0,1] - _Rm_rn[0,2] 
         return _Rm_rn
@@ -231,15 +238,19 @@ class Propagator_on_Uniform_Grid_Polar_Box_Over_r(object):
         _hbar2m = 0.5 * self.hbar**2 / self.mass
         _Kr = - _hbar2m * _D2  # something like radial kinetic energy
         
+        _alpha = 1  # exponent of r such that gm = r^alpha * Rm
+
         _r_sq_arr = np.square(self.r_arr)
         for _im, _m in enumerate(self.m_iter):
-            _Vm = self.Vr - _hbar2m * (1-_m*_m) / _r_sq_arr
+            _Vm = self.Vr - _hbar2m * (_alpha*_alpha - _m*_m) / _r_sq_arr
             _M2Vm = mul_tridiag_and_diag(self.M2, _Vm)
             self.M2Hm[_im,:,:] = _Kr + _M2Vm
         
         _D1 = get_D1_tridiag(self.Nr, self.dr)
-        self.M1H1 = _hbar2m * _D1 / self.r_arr
-        self.M1 = get_M1_tridiag(self.Nr)
+        self.M1rH1 = (- _hbar2m * (1-2*_alpha)) * _D1
+        _M1 = get_M1_tridiag(self.Nr)
+        self.M1r = mul_tridiag_and_diag(_M1, self.r_arr)
+
     
             
     def propagate(self, wf, dt, Nt=1):
@@ -269,15 +280,18 @@ class Propagator_on_Uniform_Grid_Polar_Box_Over_r(object):
         _Nt = int(Nt)
         
         _FO = (-0.5j*dt/self.hbar) * self.M2Hm
-        _unitary_shape = (3,)+_wf_1d.shape
-        _unitary_forward_half = np.swapaxes(
-                self.M2+_FO, 0, 1).reshape(_unitary_shape)
-        _unitary_backward_half = np.swapaxes(
-                self.M2-_FO, 0, 1).reshape(_unitary_shape)
+        _unitary_forward_half = self.M2 + _FO
+        _unitary_backward_half = self.M2 - _FO
+
+#        _unitary_shape = (3,)+_wf_1d.shape
+#        _unitary_forward_half = np.swapaxes(
+#                self.M2+_FO, 0, 1).reshape(_unitary_shape)
+#        _unitary_backward_half = np.swapaxes(
+#                self.M2-_FO, 0, 1).reshape(_unitary_shape)
         
-        _FO1 = (-0.25j*dt/self.hbar)*self.M1H1
-        _uni1_forward_half_half = self.M1 + _FO1
-        _uni1_backward_half_half = self.M1 - _FO1
+        _FO1 = (-0.25j*dt/self.hbar) * self.M1rH1
+        _uni1_forward_half_half = self.M1r + _FO1
+        _uni1_backward_half_half = self.M1r - _FO1
         
         
         
@@ -291,8 +305,12 @@ class Propagator_on_Uniform_Grid_Polar_Box_Over_r(object):
                 tridiag_forward(_uni1_forward_half_half,_wf[_im],_wf_m_half)
                 tridiag_backward(_uni1_backward_half_half,_wf[_im],_wf_m_half)
             
-            tridiag_forward(_unitary_forward_half, _wf_1d, _wf_1d_half)
-            tridiag_backward(_unitary_backward_half, _wf_1d, _wf_1d_half)
+            for _im in range(self.Nm):
+                tridiag_forward(_unitary_forward_half[_im], _wf[_im], _wf_m_half)
+                tridiag_backward(_unitary_backward_half[_im], _wf[_im], _wf_m_half)
+
+#            tridiag_forward(_unitary_forward_half, _wf_1d, _wf_1d_half)
+#            tridiag_backward(_unitary_backward_half, _wf_1d, _wf_1d_half)
             
             for _im in range(self.Nm):
                 tridiag_forward(_uni1_forward_half_half,_wf[_im],_wf_m_half)
