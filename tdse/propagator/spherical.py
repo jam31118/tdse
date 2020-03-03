@@ -4,6 +4,63 @@ from numpy import asarray
 
 from ._base import Wavefunction
 
+
+
+from numbers import Integral
+
+from scipy.special import lpmn
+import numpy as np
+from numpy import cos, sin
+
+def Plm_and_dtheta_Plm_for_single_m(m, lmax, theta):
+    """
+    Evaluate associate Legendre function of cosine `theta` and its derivative 
+    with respect to `theta` for fixed order `m` and maximum degree `lmax`
+
+    Parameters
+    ----------
+    m : int
+        order of the Legendre function
+        should satisfy: `|m| <= lmax`
+    lmax : int
+        maximum degree of the Legendre function
+        should satisfy: `|m| <= lmax`
+    theta : float
+        The associated Legendre function and its derivative is evalauted
+        for its cosine value.
+        should satisfy: `sin(theta) >= 0`
+    """
+    # Check parameters
+    assert isinstance(m, Integral) and isinstance(lmax, Integral)
+    _abs_m = abs(m)
+    assert lmax >= _abs_m 
+    _sin_theta, _cos_theta = sin(theta), cos(theta)
+    if _sin_theta < 0: 
+        _msg = "sin(theta) should be nonnegative. Given: {}"
+        raise ValueError(_msg.format(_sin_theta))
+    
+    # Evaluate
+    _Nlm = lmax - _abs_m + 1
+    _l = _abs_m + np.arange(_Nlm)
+    _Plm = np.empty((_Nlm,), dtype=np.float)
+    _dtheta_Plm = np.empty((_Nlm,), dtype=np.float)
+    
+    if _cos_theta == 1:
+        _Plm[:] = ( m == 0 )
+        _dtheta_Plm = ( m == 1 ) * (-_l*(_l+1)/2.) \
+                    + ( m == -1 ) * 0.5
+    elif _cos_theta == -1:
+        _Plm[:] = ( m == 0 ) 
+        _dtheta_Plm[:] = ( m == 1 ) * (-1)**(_l+1) * (_l*(_l+1)/2.) \
+                        + ( m == -1 ) * (-1)**_l * 0.5
+    else:
+        _Plm_all, _dx_Plm_all = lpmn(m, lmax, _cos_theta)
+        _Plm, _dx_Plm = _Plm_all[-1,_abs_m:], _dx_Plm_all[-1,_abs_m:]
+        _dtheta_Plm = - _sin_theta * _dx_Plm
+    return _Plm, _dtheta_Plm
+
+
+
 class Wavefunction_on_Spherical_Box_with_single_m(Wavefunction):
     """
     A specification object for wavefunction defined on a spherical box
