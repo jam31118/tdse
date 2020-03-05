@@ -1,6 +1,7 @@
 """Base propagator object"""
 
-from numpy import sqrt
+import numpy as np
+from numpy import pi, sqrt
 
 class Wavefunction(object):
     """Base class for wavefunction objects"""
@@ -54,4 +55,42 @@ class Propagator(object):
             _wf_prev = wf.copy()
         if _i >= _max_iter-1: raise Exception("Maximum iteration exceeded")
         else: print("iteration count at end: {}".format(_i))
+
+
+
+def _eval_f_and_derivs_by_FD(_r, _Rm, _dr):
+    """
+    Evaluate values of a function and its derivatives
+    from the function values on a regular (i.e. uniform) one dimensional grid
+    
+    Parameters
+    ----------
+    Rm : (Nm, Nr) or (Nr,) array-like
+        
+    """
+    _Nr = _Rm.shape[-1]
+    _rmin, _rmax = 0.0, (_Nr - 1) * _dr
+    assert _rmin <= _r and _r < _rmax
+
+    _Ns = 4
+    _il = int((_r - _rmin) // _dr)
+    _is0 = (_il-1) \
+            + (_il < 1) * (1 - _il) \
+            + (_il > _Nr-3) * (_Nr-3 - _il)
+    _r_arr = np.arange(_Nr) * _dr
+
+    _rn_minus_r = _r_arr[_is0:_is0+_Ns] - _r
+    _A = np.empty((_Ns, _Ns), dtype=float)
+    _A[:,0] = 1.0
+    for _is in range(1,_Ns):
+        _A[:,_is] = _A[:,_is-1] * _rn_minus_r / _is
+    _b = _Rm[...,_is0:_is0+_Ns].transpose()  # b.ndim may be 1 or 2
+   
+    try: _Rm_derivs = np.linalg.solve(_A, _b)
+    except np.linalg.LinAlgError as e:
+        raise RuntimeError("Failed to get Rm deriv for r{}".format(_r))
+    except: raise Exception("Unexpected error")
+
+    return _Rm_derivs
+
 

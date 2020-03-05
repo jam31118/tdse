@@ -1,14 +1,14 @@
 """Propagator for wavefunction defined in spherical coordinate system"""
 
-from numpy import asarray
+from numpy import pi, asarray
 
-from ._base import Wavefunction
+from ._base import Wavefunction, _eval_f_and_derivs_by_FD
 
 
 
 from numbers import Integral
 
-from scipy.special import lpmn
+from scipy.special import lpmn, factorial
 import numpy as np
 from numpy import cos, sin
 
@@ -68,6 +68,46 @@ class Wavefunction_on_Spherical_Box_with_single_m(Wavefunction):
     """
     
     dim = 3
+
+    def __init__(self, Nr, dr, m, lmax):
+        """Initialize"""
+        
+        # Check and set arguments as members
+        if not isinstance(Nr, Integral) or not (Nr > 0):
+            _msg = "`Nr` should be a positive integer. Given: {}"
+            raise ValueError(_msg.format(Nr))
+        self.Nr = Nr
+        
+        if not (float(dr) > 0):
+            _msg = "`dr` should be a positive real number. Given: {}"
+            raise ValueError(_msg.format(dr))
+        self.dr = float(dr)
+        
+        if not isinstance(m, Integral) or m < 0:
+            _msg = "`m` should be a nonnegative integer. Given: {}"
+            raise ValueError(_msg.format(m))
+        self.m = m
+        
+        if not isinstance(lmax, Integral) or lmax < m:
+            _msg = "`lmax` should be an integer and `>= m`. Given: {}"
+            raise ValueError(_msg.format(lmax))
+        self.lmax = lmax
+
+        # Set some members
+        self.l = np.arange(self.m, self.lmax+1, dtype=int)
+        _Nl = self.l.size
+        self.Nlm = _Nl
+        self.lm = np.array([(l,self.m) for l in self.l], dtype=int)
+        
+        self.r_arr = self.get_r_arr(self.Nr, self.dr)
+        self.r_max = self.r_arr[-1] + dr
+
+        self.shape = (self.Nlm, self.Nr)
+        
+        # About spherical harmonics evaluation
+        self.have_sph_harm_coef = False
+
+
     
     @staticmethod
     def get_r_arr(Nr, dr):
@@ -94,6 +134,121 @@ class Wavefunction_on_Spherical_Box_with_single_m(Wavefunction):
         _norm_sq_total = np.sum(_norm_sq_lm, axis=-1)
         return _norm_sq_total
 
+    @classmethod
+    def get_each_dimension_of_wf_array(cls, wf):
+        _wf = asarray(wf)
+        if _wf.ndim not in range(1,cls.dim+1): 
+            raise ValueError("Unexpected dimension `wf`: {}".format(_wf.ndim))
+        _Nlm, _Nr = (1, _wf.size) if _wf.ndim == 1 else _wf.shape
+        return _Nlm, _Nr
+
+    def wf2Rlm(self, wf):
+        """
+        Evaluate `Rlm = 1/r * wf` 
+        with proper boundary condition at r = 0 and rmax
+        """
+        _wf = asarray(wf)
+        _Nlm, _Nr = self.get_each_dimension_of_wf_array(_wf)
+        if _Nr != self.Nr or _Nlm != self.Nlm:
+            _msg = "The `wf` has inconsistent shape:\nExpected={}\nGiven={}"
+            raise ValueError(_msg.format((self.Nlm, self.Nr), _wf.shape))
+        
+        _Rlm_shape = (self.Nlm, 1+self.Nr+1)
+        _Rlm = np.empty(_Rlm_shape, dtype=_wf.dtype)
+        _Rlm[:,[0,-1]] = 0.0
+        _Rlm[:,1:-1] = _wf / self.r_arr
+        if self.m == 0:
+            _Rlm[0,0] = 2.*_Rlm[0,1] - _Rlm[0,2]
+            
+        return _Rlm
+    
+    def eval_wf_with_wf_deriv_at_q(self, q, Rlm):
+        """
+        Evaluate wavefunction and its partial derivatives at given coordinate
+
+        Parameters
+        ----------
+        q : (3,) array-like
+            coordinate vector : (r, theta, phi)
+            - r : radial coordinate
+            - theta : polar angle in radian
+            - phi : azimuthal angle in radian
+        Rlm : (Nlm, Nr) or (Nr,) array-like
+            radial function(s) in this wavefunction's expansion
+        """
+        _q = asarray(q)
+        if _q.shape != (self.dim,):
+            _msg = "Unexpected shape of the coordinate vector `q`. Given: {}"
+            raise ValueError(_msg.format(q))
+
+        _r, _theta, _phi = _q
+        _sin_theta, _cos_theta = sin(_theta), cos(_theta)
+        if _r >= 0 and _sin_theta >= 0:
+            pass
+        elif _r >= 0 and _sin_theta < 0:
+            _sin_theta, _phi = -_sin_theta, _phi + pi
+        elif _r < 0 and _sin_theta >= 0:
+            _r, _cos_theta, _phi = -_r, -_cos_theta, _phi + pi
+        elif _r < 0 and _sin_theta < 0:
+            _r, _cos_theta, _sin_theta = -_r, -_cos_theta, -_sin_theta
+        else: raise Exception("Unexpected case for r and sin_theta")
+
+        assert _sin_theta >= 0.0 and _r >= 0.0
+        _theta = np.arctan2(_sin_theta, _cos_theta)
+
+        if not (_r < self.r_max):
+            _msg = "`r` is out of the box radius (={}). `r`={}"
+            raise ValueError(_msg.format(self.r_max, _r))
+        
+        # Evaluate Rlm and its derivatives
+        _Rlm = asarray(Rlm)
+        _Nlm, _Nr_total = self.get_each_dimension_of_wf_array(_Rlm)
+        if _Nlm != self.Nlm or _Nr_total != 1+self.Nr+1:
+            raise ValueError("Inconsistent array shape for `Rlm`")
+        _Rlm_derivs = _eval_f_and_derivs_by_FD(_r, _Rlm, self.dr)
+
+        # Evaluate associated Legendre functions
+        _Plm, _dtheta_Plm = Plm_and_dtheta_Plm_for_single_m(
+                self.m, self.lmax, _theta)
+#        print("r,theta,phi == ({},{},{})".format(_r, _theta, _phi))
+#        print("_Plm:{}".format(_Plm))
+#        print("_dtheta_Plm:{}".format(_dtheta_Plm))
+        
+        # Evaluate coefficients of spherical harmonics
+        if not self.have_sph_harm_coef: self._eval_sph_harm_coef()
+        _clm = self.sph_harm_coef_arr  # aliasing
+        
+        # Evaluate azimuthal part
+        _exp_imphi = np.exp(1.j*self.m*_phi)
+
+        # Evalute wavefunction and its partial derivatives
+        _clm_Plm = _clm * _Plm
+        _wf_q = np.sum(_Rlm_derivs[0] * _clm_Plm) * _exp_imphi
+        _dr_wf_q = np.sum(_Rlm_derivs[1] * _clm_Plm) * _exp_imphi
+        _dtheta_wf_q = np.sum(_Rlm_derivs[0] * _clm * _dtheta_Plm) * _exp_imphi
+        _dphi_wf_q = 1.j * self.m * _wf_q
+        _partial_derivs_wf_q = np.array(
+                [_dr_wf_q, _dtheta_wf_q, _dphi_wf_q], dtype=np.complex)
+
+        return _wf_q, _partial_derivs_wf_q
+
+
+    def _eval_sph_harm_coef(self):
+        _l, _m = self.l, self.m
+        self.sph_harm_coef_arr = np.sqrt(
+                (2*_l+1)/(4.*pi)*factorial(_l-_m)/factorial(_l+_m))
+        self.have_sph_harm_coef = True 
+
+
+    def h_q(self, q):
+        """
+        Evaluate an array of 
+        $h_{i} \equiv |\partial{\mathbf{r}}/\parital{q_{i}}|$
+        """
+        _h = np.array([1.0, q[0], q[0]*sin(q[1])])
+        return _h
+
+        
 
 
 from numbers import Integral
@@ -118,37 +273,15 @@ class Propagator_on_Spherical_Box_with_single_m(Propagator):
     wf_class = Wavefunction_on_Spherical_Box_with_single_m
     
     def __init__(self, Nr, dr, m, lmax, Vr=0.0, hbar=1.0, mass=1.0):
-        
-        # Check argumetns
-        if Nr != int(Nr) or not (Nr > 0):
-            _msg = "`Nr` should be a positive integer. Given: {}"
-            raise ValueError(_msg.format(Nr))
-        self.Nr = int(Nr)
-        
-        if not (float(dr) > 0):
-            _msg = "`dr` should be a positive real number. Given: {}"
-            raise ValueError(_msg.format(dr))
-        self.dr = float(dr)
-        
-        if not isinstance(m, Integral) or m < 0:
-            _msg = "`m` should be a nonnegative integer. Given: {}"
-            raise ValueError(_msg.format(m))
-        self.m = m
-        
-        if not isinstance(lmax, Integral) or lmax < m:
-            _msg = "`lmax` should be an integer and `>= m`. Given: {}"
-            raise ValueError(_msg.format(lmax))
-        self.lmax = lmax
-        
+
+        # Construct wavefunction object from parameters
+        self.wf = self.wf_class(Nr, dr, m, lmax)
+
+        # Copy parameters
+        for _attr in ("Nr","dr","m","lmax","l","Nlm","lm","r_max","r_arr"):
+            setattr(self, _attr, getattr(self.wf, _attr))
+
         self.hbar, self.mass = hbar, mass
-        
-        self.l = np.arange(self.m, self.lmax+1, dtype=int)
-        _Nl = self.l.size
-        self.Nlm = _Nl
-        self.lm = np.array([(l,self.m) for l in self.l], dtype=int)
-        
-        self.r_arr = self.dr * np.arange(1, self.Nr+1)
-        self.r_max = self.r_arr[-1] + dr
         
         if Vr == 0.0: self.Vr = np.zeros((self.Nr,), dtype=np.float)
         else:
