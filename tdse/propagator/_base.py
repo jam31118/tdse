@@ -58,7 +58,7 @@ class Propagator(object):
 
 
 
-def _eval_f_and_derivs_by_FD(_r, _Rm, _dr, _r0=0.0):
+def _eval_f_and_derivs_by_FD(_r, _Rm, _dr, _r0=0.0, _with_fd_rlim=False):
     """
     Evaluate values of a function and its derivatives
     from the function values on a regular (i.e. uniform) one dimensional grid
@@ -77,9 +77,10 @@ def _eval_f_and_derivs_by_FD(_r, _Rm, _dr, _r0=0.0):
     _is0 = (_il-1) \
             + (_il < 1) * (1 - _il) \
             + (_il > _Nr-3) * (_Nr-3 - _il)
-    _r_arr = np.arange(_Nr) * _dr
-
-    _rn_minus_r = _r_arr[_is0:_is0+_Ns] - _r
+#    _r_arr = np.arange(_Nr) * _dr
+    _r_arr_slice = np.arange(_is0,_is0+_Ns) * _dr
+#    _rn_minus_r = _r_arr[_is0:_is0+_Ns] - _r
+    _rn_minus_r = _r_arr_slice - _r
     _A = np.empty((_Ns, _Ns), dtype=float)
     _A[:,0] = 1.0
     for _is in range(1,_Ns):
@@ -91,6 +92,8 @@ def _eval_f_and_derivs_by_FD(_r, _Rm, _dr, _r0=0.0):
         raise RuntimeError("Failed to get Rm deriv for r{}".format(_r))
     except: raise Exception("Unexpected error")
 
-    return _Rm_derivs
+    _result = _Rm_derivs
+    if _with_fd_rlim: _result = (_Rm_derivs, _r_arr_slice[[0,-1]])
+    return _result
 
 

@@ -54,7 +54,7 @@ class Wavefunction_Uniform_1D_Box(Wavefunction):
         _abs_sq_wf = np.real(np.conj(_wf) * _wf)
         return dx * np.sum(_abs_sq_wf)
 
-    def eval_wf_with_wf_deriv_at_x(self, x, wf):
+    def eval_wf_with_wf_deriv_at_x(self, x, wf, with_fd_xlim=False):
         """
         Evaluate wavefunction and its derivative at given coordinate `x`
 
@@ -76,9 +76,24 @@ class Wavefunction_Uniform_1D_Box(Wavefunction):
         if (_wf[0] != 0.0) or (_wf[-1] != 0.0):
             _msg = "Both ends of the wavefunction should be zero. Given: {},{}"
             raise ValueError(_msg.format(_wf[0], _wf[-1]))
-        _wf_derivs = _eval_f_and_derivs_by_FD(_x, _wf, self.dx, _r0=self.x0)
-        _wf_x, _dx_wf_x = _wf_derivs[0], _wf_derivs[1]
-        return _wf_x, _dx_wf_x
+        _eval_fdf_result = _eval_f_and_derivs_by_FD(_x, _wf, self.dx, 
+                _r0=self.x0, _with_fd_rlim=with_fd_xlim)
+
+        if with_fd_xlim: 
+            _wf_derivs, _fd_xlim = _eval_fdf_result
+            return _wf_derivs[0], _wf_derivs[1], _fd_xlim
+        else:
+            _wf_derivs = _eval_fdf_result
+            return _wf_derivs[0], _wf_derivs[1]
+
+#        _wf_derivs, _df_xlim = None, None
+#        if with_fd_xlim: _wf_derivs, _fd_xlim = _eval_fdf_result
+#        else: _wf_derivs = _eval_fdf_result
+#        _wf_x, _dx_wf_x = _wf_derivs[0], _wf_derivs[1]
+#        _result = (_wf_x, _dx_wf_x)
+#        if with_fd_xlim: _result += _result + (_fd_xlim,)
+#        return _result
+#        return _wf_x, _dx_wf_x
 
 
 
