@@ -86,15 +86,6 @@ class Wavefunction_Uniform_1D_Box(Wavefunction):
             _wf_derivs = _eval_fdf_result
             return _wf_derivs[0], _wf_derivs[1]
 
-#        _wf_derivs, _df_xlim = None, None
-#        if with_fd_xlim: _wf_derivs, _fd_xlim = _eval_fdf_result
-#        else: _wf_derivs = _eval_fdf_result
-#        _wf_x, _dx_wf_x = _wf_derivs[0], _wf_derivs[1]
-#        _result = (_wf_x, _dx_wf_x)
-#        if with_fd_xlim: _result += _result + (_fd_xlim,)
-#        return _result
-#        return _wf_x, _dx_wf_x
-
 
 
 from numbers import Integral, Real
@@ -123,16 +114,6 @@ class Propagator_on_1D_Box(Propagator):
                 _msg = "`Vx` should be of shape ({},). Given shape: {}"
                 raise ValueError(_msg.format(self.N, _Vx.shape))
             self.Vx = _Vx
-        
-#        try: _Vx = np.array(Vx, copy=False)
-#        except:
-#            _msg = "Failed to convert the given potential array: `Vx`"
-#            raise Exception(_msg.format(Vx))
-#        if _Vx.shape != (N,):
-#            _msg = ("The potential array should have shape (N,)==({},)\n"
-#                    "Given: {}")
-#            raise TypeError(_msg.format(N, Vx))
-#        self.Vx = _Vx
         
         if not (hbar > 0.0) or not (mass > 0.0):
             _msg = ("hbar and m (mass) should be positive\n"
