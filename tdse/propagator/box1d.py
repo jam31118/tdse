@@ -4,7 +4,7 @@ from numbers import Integral
 
 from numpy import asarray
 
-from ._base import Wavefunction, Propagator
+from ._base import Wavefunction, Propagator, _eval_f_and_derivs_by_FD
 
 
 class Wavefunction_Uniform_1D_Box(Wavefunction):
@@ -54,6 +54,31 @@ class Wavefunction_Uniform_1D_Box(Wavefunction):
         _abs_sq_wf = np.real(np.conj(_wf) * _wf)
         return dx * np.sum(_abs_sq_wf)
 
+    def eval_wf_with_wf_deriv_at_x(self, x, wf):
+        """
+        Evaluate wavefunction and its derivative at given coordinate `x`
+
+        Parameters
+        ----------
+        x : float
+            A coordinate at which the wavefunction and its derivative
+            is evaluated
+        wf : (Nx,) array-like
+            A wavefunction defined on a spatial grid with unifrom spacings
+            The both ends (i.e. wf[0] and wf[-1]) should be zero as 
+            the boundary condition of a 'box'.
+        """
+        _x = float(x)
+        if (_x < self.x0) or (_x >= self.xmax): 
+            _msg = "Given coordinate `x`(={}) is out of bound [{},{})"
+            raise ValueError(_msg.format(x, self.x0, self.xmax))
+        _wf = asarray(wf)
+        if (_wf[0] != 0.0) or (_wf[-1] != 0.0):
+            _msg = "Both ends of the wavefunction should be zero. Given: {},{}"
+            raise ValueError(_msg.format(_wf[0], _wf[-1]))
+        _wf_derivs = _eval_f_and_derivs_by_FD(_x, _wf, self.dx, _r0=self.x0)
+        _wf_x, _dx_wf_x = _wf_derivs[0], _wf_derivs[1]
+        return _wf_x, _dx_wf_x
 
 
 
@@ -76,7 +101,7 @@ class Propagator_on_1D_Box(Propagator):
         for _attr in ("N","dx"):
             setattr(self, _attr, getattr(self.wf, _attr))
 
-        if Vx == 0.0: self.Vx = np.zeros((self.N,), dtype=np.float)
+        if np.all(Vx == 0.0): self.Vx = np.zeros((self.N,), dtype=np.float)
         else:
             _Vx = asarray(Vx)
             if _Vx.shape != (self.N,):
@@ -135,6 +160,7 @@ class Propagator_on_1D_Box(Propagator):
                 Nt_per_iter, norm_thres)
 
         if wf is None: return _wf
+
 
 
 # Aliasing

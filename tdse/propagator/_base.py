@@ -58,7 +58,7 @@ class Propagator(object):
 
 
 
-def _eval_f_and_derivs_by_FD(_r, _Rm, _dr):
+def _eval_f_and_derivs_by_FD(_r, _Rm, _dr, _r0=0.0):
     """
     Evaluate values of a function and its derivatives
     from the function values on a regular (i.e. uniform) one dimensional grid
@@ -69,7 +69,7 @@ def _eval_f_and_derivs_by_FD(_r, _Rm, _dr):
         
     """
     _Nr = _Rm.shape[-1]
-    _rmin, _rmax = 0.0, (_Nr - 1) * _dr
+    _rmin, _rmax = _r0, _r0 + (_Nr - 1) * _dr
     assert _rmin <= _r and _r < _rmax
 
     _Ns = 4
