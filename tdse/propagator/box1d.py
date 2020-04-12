@@ -44,7 +44,9 @@ class Wavefunction_Uniform_1D_Box(Wavefunction):
 
         self.shape = (self.N,)
         
-        self.x = self.x0 + self.dx * np.arange(1, self.N+1)
+        self.x_tot = self.x0 + self.dx * np.arange(1+self.N+1)
+#        self.x = self.x0 + self.dx * np.arange(1, self.N+1)
+        self.x = self.x_tot[1:-1]
         self.xmax = self.x[-1] + self.dx
         
 
@@ -108,9 +110,10 @@ class Propagator_on_1D_Box(Propagator):
             setattr(self, _attr, getattr(self.wf, _attr))
 
         if np.all(Vx == 0.0): self.Vx = np.zeros((self.N,), dtype=np.float)
+        elif callable(Vx): self.Vx = asarray([Vx(_x) for _x in self.wf.x])
         else:
             _Vx = asarray(Vx)
-            if _Vx.shape != (self.N,):
+            if _Vx.shape != self.wf.shape:
                 _msg = "`Vx` should be of shape ({},). Given shape: {}"
                 raise ValueError(_msg.format(self.N, _Vx.shape))
             self.Vx = _Vx

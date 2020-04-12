@@ -78,7 +78,7 @@ def _eval_f_and_derivs_by_FD(_r, _Rm, _dr, _r0=0.0, _with_fd_rlim=False):
             + (_il < 1) * (1 - _il) \
             + (_il > _Nr-3) * (_Nr-3 - _il)
 #    _r_arr = np.arange(_Nr) * _dr
-    _r_arr_slice = np.arange(_is0,_is0+_Ns) * _dr
+    _r_arr_slice = _rmin + np.arange(_is0,_is0+_Ns) * _dr
 #    _rn_minus_r = _r_arr[_is0:_is0+_Ns] - _r
     _rn_minus_r = _r_arr_slice - _r
     _A = np.empty((_Ns, _Ns), dtype=float)
