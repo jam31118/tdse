@@ -132,6 +132,7 @@ class Wavefunction_on_Spherical_Box_with_single_m(Wavefunction):
         _wf_abs_sq = np.real(_wf.conj() * _wf)
         _norm_sq_lm = np.sum(_wf_abs_sq, axis=-1)
         _norm_sq_total = np.sum(_norm_sq_lm, axis=-1)
+        _norm_sq_total *= dr
         return _norm_sq_total
 
     @classmethod
