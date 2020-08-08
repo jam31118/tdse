@@ -30,13 +30,13 @@ def gaussian_elimination_tridiagonal(alpha, beta, gamma, b):
     beta_over_delta = beta / delta[:-1]
     c = b.copy()
     for idx in range(N-1):
-        c[idx+1] -= c[idx] * beta_over_delta[idx]
+        c[...,idx+1] -= c[...,idx] * beta_over_delta[idx]
 
     ## Calculate v
     gamma_over_delta = gamma / delta[:-1]
     v = c / delta
     for idx in range(N-1,0,-1):
-        v[idx-1] -= v[idx] * gamma_over_delta[idx-1]
+        v[...,idx-1] -= v[...,idx] * gamma_over_delta[idx-1]
     
     return v
 
