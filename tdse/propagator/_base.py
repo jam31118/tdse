@@ -27,7 +27,8 @@ class Propagator(object):
         pass
 
     def propagate_to_ground_state(self, wf, dt, max_Nt, normalizer_args,
-                                  Nt_per_iter=10, norm_thres=1e-13):
+                                  Nt_per_iter=10, norm_thres=1e-13, 
+                                  wfs_to_substract=()):
         """
         Propagate the given wavefunction by the imaginary timestep
         to get the lowest energy possible from the given initial wavefunction
@@ -40,6 +41,9 @@ class Propagator(object):
             raise ValueError(_msg.format(_dt))
         _imag_dt = -1.0j * _dt # imaginary time for propagating to ground state
         
+        # Check `wfs_to-substract`
+        assert type(wfs_to_substract) in (list, tuple, np.ndarray)
+
         # Initialize
         self.wf_class.normalize(wf, *normalizer_args)
         _wf_prev = wf.copy()
@@ -49,12 +53,19 @@ class Propagator(object):
         _max_iter = int(max_Nt / Nt_per_iter) + 1
         for _i in range(_max_iter):
             self.propagate(wf, _imag_dt, Nt=Nt_per_iter)
+
+            # Let our wavefunction to be orthogonal to given wavefunction(s)
+            for _wf_sub in wfs_to_substract:
+                wf -= _wf_sub * self.wf_class.inner(wf, _wf_sub, self.dx)
+
             self.wf_class.normalize(wf, *normalizer_args)
             _norm = self.wf_class.norm_sq(wf - _wf_prev, *normalizer_args)
+            if not (_i % 100):
+                print("[_i={:05d}] _norm = {:.16e}".format(_i, _norm))
             if _norm < norm_thres: break
             _wf_prev = wf.copy()
         if _i >= _max_iter-1: raise Exception("Maximum iteration exceeded")
-        else: print("iteration count at end: {}".format(_i))
+        else: print("iteration count at end: {}".format(_i*Nt_per_iter))
 
 
 

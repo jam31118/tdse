@@ -152,10 +152,14 @@ class Propagator_on_1D_Box(Propagator):
             tridiag_backward(_U_adj, sf_arr, _sf_at_mid_time)
 
     def propagate_to_ground_state(self, wf=None, dt=None, max_Nt=5000, 
-                                  Nt_per_iter=10, norm_thres=1e-13):
+                                  Nt_per_iter=10, norm_thres=1e-13, 
+                                  wfs_to_substract=()):
         # Determine the timestep
         _dt = dt
         if dt is None: _dt = self.dx / 4.
+
+        # Check `wfs_to-substract`
+#        assert type(wfs_to_substract) in (list, tuple, np.ndarray)
     
         # Determine the wavefucntion
         if wf is None: 
@@ -166,7 +170,7 @@ class Propagator_on_1D_Box(Propagator):
         # Propagate to the ground state
         _normalizer_args = (self.dx,)
         super().propagate_to_ground_state(_wf, _dt, max_Nt, _normalizer_args, 
-                Nt_per_iter, norm_thres)
+                Nt_per_iter, norm_thres, wfs_to_substract)
 
         if wf is None: return _wf
     
