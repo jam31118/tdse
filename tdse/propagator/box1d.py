@@ -56,6 +56,16 @@ class Wavefunction_Uniform_1D_Box(Wavefunction):
         _abs_sq_wf = np.real(np.conj(_wf) * _wf)
         return dx * np.sum(_abs_sq_wf)
 
+
+    @staticmethod
+    def inner(wf1, wf2, dx):
+        """Evaluate an inner product of given wavefunctions"""
+        _wf1, _wf2 = (asarray(_wf) for _wf in (wf1, wf2))
+        assert _wf1.shape == _wf2.shape and _wf1.ndim > 0
+        assert dx > 0
+        return dx * np.sum(np.conj(_wf1) * _wf2, axis=-1)
+
+
     def eval_wf_with_wf_deriv_at_x(self, x, wf, with_fd_xlim=False):
         """
         Evaluate wavefunction and its derivative at given coordinate `x`
@@ -159,6 +169,18 @@ class Propagator_on_1D_Box(Propagator):
                 Nt_per_iter, norm_thres)
 
         if wf is None: return _wf
+    
+
+    def evaluate_energy_expectation_value(self, wf):
+        _wf = asarray(wf)
+        assert _wf.shape == (self.N,)
+        _temp1 = np.empty_like(_wf)
+        tridiag_forward(self.M2H.astype(np.complex), _wf, _temp1)
+        _temp2 = np.empty_like(_wf)
+        tridiag_backward(self.M2, _temp2, _temp1)
+        _energy_expect_val = self.wf_class.inner(_wf, _temp2, self.dx)
+        assert abs(_energy_expect_val.imag) < 1e-15
+        return _energy_expect_val.real
 
 
 
