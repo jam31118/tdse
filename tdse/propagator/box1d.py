@@ -105,7 +105,9 @@ from numbers import Integral, Real
 import numpy as np
 
 from tdse.evol import get_D2_tridiag, get_M2_tridiag, mul_tridiag_and_diag
-from tdse.tridiag import tridiag_forward, tridiag_backward
+from tdse.tridiag import tridiag_forward
+#from tdse.tridiag import tridiag_backward
+from scipy.linalg import solveh_banded, solve_banded
 
 
 class Propagator_on_1D_Box(Propagator):
@@ -149,7 +151,10 @@ class Propagator_on_1D_Box(Propagator):
         _U_adj = self.M2 + 0.5j*dt*self.M2H
         for _ in range(Nt):
             tridiag_forward(_U, sf_arr, _sf_at_mid_time)
-            tridiag_backward(_U_adj, sf_arr, _sf_at_mid_time)
+
+            tridiag_backward(_U_adj, sf_arr, _sf_at_mid_time)   
+            # [NOTE] This is only possible when _U_adj is symmetric
+#            sf_arr[:] = solve_banded((1,1), _U_adj, _sf_at_mid_time)
 
     def propagate_to_ground_state(self, wf=None, dt=None, max_Nt=5000, 
                                   Nt_per_iter=10, norm_thres=1e-13, 
@@ -270,17 +275,25 @@ class Propagator_on_1D_Box_with_field(Propagator_on_1D_Box):
         for _it in range(_Nt):
             
             tridiag_forward(_M2U0_forward_quarter, _wf, _wf_mid)
+
             tridiag_backward(_M2U0_backward_quarter, _wf, _wf_mid)
+            # [NOTE] This is only valid when the tridiag is symmetric
+#            _wf[:] = solve_banded((1,1), _M2U0_backward_quarter, _wf_mid)
             
             _half_dt_M1HA_over_ihbar = (0.5*dt * self.A(_t+0.5*_dt)) * self.M1HA_over_ihbar_At
             _M1UA_forward_half = (self.M1 + _half_dt_M1HA_over_ihbar).astype(np.complex)
             _M1UA_backward_half = (self.M1 - _half_dt_M1HA_over_ihbar).astype(np.complex)
+
             tridiag_forward(_M1UA_forward_half, _wf, _wf_mid)
             tridiag_backward(_M1UA_backward_half, _wf, _wf_mid)
+            # [NOTE] This is only valid when the tridiag is symmetric
+#            _wf[:] = solve_banded((1,1), _M1UA_backward_half, _wf_mid)
             
             tridiag_forward(_M2U0_forward_quarter, _wf, _wf_mid)
             tridiag_backward(_M2U0_backward_quarter, _wf, _wf_mid)
-            
+            # [NOTE] This is only valid when the tridiag is symmetric
+#            _wf[:] = solve_banded((1,1), _M2U0_backward_quarter, _wf_mid)
+
             _t += _dt
             
         return _t
