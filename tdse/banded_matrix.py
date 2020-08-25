@@ -87,10 +87,18 @@ def solve_banded_with_rank1_update(
     Ainv_u_b = solve_banded(
             l_and_u, A, np.stack((u,b), axis=-1), **solve_kwargs)
     Ainv_u, Ainv_b = Ainv_u_b[:,0], Ainv_u_b[:,1]
-    v_Ainv_u = np.sum(np.conj(v) * Ainv_u, axis=-1)
+
+    ##### Note
+    # There is no complex conjugate inside `numpy.dot()` 
+    # and it is necessary to give the right answer 
+    # for the complex-valued matrices and vectors
+    #####
+    v_Ainv_u = np.dot(v, Ainv_u)
     assert abs(1 + v_Ainv_u) > thres
-    v_Ainv_b = np.sum(np.conj(v) * Ainv_b, axis=-1)
+    v_Ainv_b = np.dot(v, Ainv_b)
+
     Atot_inv_b = Ainv_b - (v_Ainv_b / (1 + v_Ainv_u)) * Ainv_u
+
     return Atot_inv_b
 
 
