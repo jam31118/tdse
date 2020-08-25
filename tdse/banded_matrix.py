@@ -4,6 +4,52 @@ import numpy as np
 from numpy import asarray
 from scipy.linalg import solve_banded
 
+from .matrix import mat_vec_mul_tridiag
+
+
+
+
+
+
+# from numpy import asarray
+
+# from tdse.matrix import mat_vec_mul_tridiag
+
+def tridiag_with_corners_mul_vec(td, cu, cl, x):
+    """
+    Evaluate `b = Ax` where `x` is a vector and `A` is a tridiagonal matrix 
+    with possibly non-zero upper-right and lower-left corner elements.
+    
+    Parameters
+    ----------
+    td : (3,M) array-like
+        The tridiagonal part of the total matrix
+        td[0,1:] : upper-diagonal
+        td[1,:] : diagonal
+        td[2,:-1] : lower-diagonal
+    cu, cl : float or complex
+        The upper and lower corner elements of the total matrix
+    x : (M,) array-like
+        A vector in `b = Ax`
+    
+    Returns
+    -------
+    b : (M,) array-like
+        Multiplication of `A` with `x`, namely, `Ax`
+    """
+    _td, _x = asarray(td), asarray(x)
+    assert _td.dtype == _x.dtype
+    assert _td.ndim == 2 and _x.ndim == 1
+    assert _td.shape == (3,_x.shape[0])
+    
+    b = mat_vec_mul_tridiag(td[1,:], td[2,:-1], td[0,1:], x)
+    b[0] += cu * x[-1]
+    b[-1] += cl * x[0]
+    return b
+
+
+
+
 
 # import numpy as np
 # from scipy.linalg import solve_banded
@@ -73,19 +119,31 @@ def solve_tridiag_with_corners(
     solve_kwargs : dictionary
         The keyword arguments passed to `scipy.linalg.solve_banded()`
     """
+
+    ########## Check input arguments
     _td, _b = asarray(td), asarray(b)
     assert _td.ndim == 2 and _b.ndim > 0
     assert _td.shape == (3,_b.shape[0])
     M = _td.shape[1]
     assert gamma != 0
     
+    ########## Construct the tridiagonal matrix `td` 
+    ########## and vectors `u`, `v` for rank-1 update
     tdp = _td.copy()
     tdp[1,[0,-1]] -= asarray([gamma*cl, cu/gamma])
-    u = np.zeros((M,), dtype=np.float)
+
+    u = np.zeros((M,), dtype=_td.dtype)
     u[[0,-1]] = [gamma, 1.]
-    v = np.zeros((M,), dtype=np.float)
+    v = np.zeros((M,), dtype=_td.dtype)
     v[[0,-1]] = [cl, cu/gamma]
     
+    ########## Solve equation and return the solution
     l_and_u = (1,1)
     return solve_banded_with_rank1_update(
-            l_and_u, tdp, u, v, b, thres=1e-10, **solve_kwargs)
+            l_and_u, tdp, u, v, b, thres=thres, **solve_kwargs)
+
+
+
+
+
+
