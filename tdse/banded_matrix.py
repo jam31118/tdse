@@ -42,10 +42,57 @@ def tridiag_with_corners_mul_vec(td, cu, cl, x):
     assert _td.ndim == 2 and _x.ndim == 1
     assert _td.shape == (3,_x.shape[0])
     
-    b = mat_vec_mul_tridiag(td[1,:], td[2,:-1], td[0,1:], x)
-    b[0] += cu * x[-1]
-    b[-1] += cl * x[0]
+    b = mat_vec_mul_tridiag(_td[1,:], _td[2,:-1], _td[0,1:], _xx)
+    b[0] += cu * _xx[-1]
+    b[-1] += cl * _xx[0]
     return b
+
+
+
+
+
+# from numpy import asarray
+
+# from tdse.matrix import mat_vec_mul_tridiag
+
+def tridiag_with_rank1_mul_vec(td, u, v, x):
+    """
+    Evaluate `b = Ax` where `x` is a vector and `A = td + u v^T` 
+    is a tridiagonal matrix plus an outer product of two vectors `u` and `v`
+
+    Parameters
+    ----------
+    td : (3,M) array-like
+        The tridiagonal part of the total matrix
+        td[0,1:] : upper-diagonal
+        td[1,:] : diagonal
+        td[2,:-1] : lower-diagonal
+    u, v : (M,) array-like
+        Two vectors whose outer product `u v^T`
+        is the rank-1 update of the original tridiagonal matrix `td`
+    x : (M,) array-like
+        A vector to which `A` is multiplied to get `b = Ax`
+    
+    Returns
+    -------
+    b : (M,) array-like
+        The multiplication of `A` with `x`, namely, `Ax`
+    """
+    _td, _x = asarray(td), asarray(x)
+    assert _td.dtype == _x.dtype
+    assert _td.ndim == 2 and _x.ndim == 1
+    assert _td.shape == (3,_x.shape[0])
+    _Nx = _x.shape[0]
+    _u, _v = asarray(u), asarray(v)
+    assert _u.shape == (_Nx,) and _v.shape == (_Nx,)
+
+    td_x = mat_vec_mul_tridiag(_td[1,:], _td[2,:-1], _td[0,1:], _x)
+    u_v_x = np.dot(_u, np.dot(_v, _x))
+    
+    b = td_x + u_v_x
+    return b
+
+
 
 
 
